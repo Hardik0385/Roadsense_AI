@@ -34,6 +34,7 @@
 
 ---
 
+<a id="1-executive-summary--problem-statement"></a>
 ## 🚗 1. Executive Summary & Problem Statement
 
 Modern connected vehicles generate up to **25 GB of time-series telemetry per hour**. For an enterprise fleet of **100,000 vehicles**, this creates a massive data firehose of **~100,000 events/second** (~8.6 TB/day) spanning high-frequency GPS coordinates, OBD-II engine diagnostics (DTCs), State-of-Charge (SoC), accelerometer G-force spikes, and tyre pressure sensors.
@@ -48,6 +49,7 @@ Modern connected vehicles generate up to **25 GB of time-series telemetry per ho
 
 ---
 
+<a id="2-industry-context--motorq-alignment"></a>
 ## 🏢 2. Industry Context & Motorq Alignment
 
 | Dimension | Motorq Reference Architecture | RoadSense AI Implementation |
@@ -60,6 +62,7 @@ Modern connected vehicles generate up to **25 GB of time-series telemetry per ho
 
 ---
 
+<a id="3-end-to-end-system-architecture"></a>
 ## 🏛️ 3. End-to-End System Architecture
 
 ```
@@ -111,6 +114,7 @@ Modern connected vehicles generate up to **25 GB of time-series telemetry per ho
 
 ---
 
+<a id="4-core-algorithmic-suite--data-structures"></a>
 ## ⚡ 4. Core Algorithmic Suite & Data Structures
 
 All algorithms are implemented with 100% test coverage in [`packages/validation/src/index.ts`](file:///c:/Users/Hardik%20Agrawal/Desktop/roadsense/packages/validation/src/index.ts):
@@ -139,6 +143,7 @@ All algorithms are implemented with 100% test coverage in [`packages/validation/
 
 ---
 
+<a id="5-polyglot-database-architecture--3nf-schema"></a>
 ## 🗄️ 5. Polyglot Database Architecture & 3NF Schema
 
 Full DDL located at [`docs/database/3NF_SCHEMA.sql`](file:///c:/Users/Hardik%20Agrawal/Desktop/roadsense/docs/database/3NF_SCHEMA.sql).
@@ -158,6 +163,7 @@ Full DDL located at [`docs/database/3NF_SCHEMA.sql`](file:///c:/Users/Hardik%20A
 
 ---
 
+<a id="6-microservices--live-data-integrations"></a>
 ## 🔌 6. Microservices & Live Data Integrations
 
 The monorepo structure is cleanly partitioned into modular packages:
@@ -183,6 +189,7 @@ roadsense/
 
 ---
 
+<a id="7-frontend-operations-cockpit--ui-features"></a>
 ## 🖥️ 7. Frontend Operations Cockpit & UI Features
 
 - **Atmospheric Floating Cockpit Design:** Ambient emerald and rose atmospheric background gradients with floating sidebar and top header cockpit shells.
@@ -193,6 +200,7 @@ roadsense/
 
 ---
 
+<a id="8-agentic-ai-controller-motorq-fuse-equivalent"></a>
 ## 🤖 8. Agentic AI Controller (Motorq Fuse Equivalent)
 
 - **Domain-Bounded Operations Assistant:** Specifically trained for fleet management, road stress analysis, weather condition queries, and emergency patrol dispatches.
@@ -202,6 +210,7 @@ roadsense/
 
 ---
 
+<a id="9-future-scope--government-integration-roadmap"></a>
 ## 🔮 9. Future Scope & Government Integration Roadmap
 
 ```
@@ -238,6 +247,7 @@ roadsense/
 
 ---
 
+<a id="10-local-quickstart--deployment-guide"></a>
 ## 🚀 10. Local Quickstart & Deployment Guide
 
 ### Prerequisites
@@ -274,6 +284,7 @@ Open **`http://localhost:3000`** in your browser to access the live RoadSense AI
 
 ---
 
+<a id="11-rest--websocket-api-reference"></a>
 ## 📡 11. REST & WebSocket API Reference
 
 ### Health & Telemetry Endpoints
@@ -293,6 +304,7 @@ Open **`http://localhost:3000`** in your browser to access the live RoadSense AI
 
 ---
 
+<a id="12-non-functional-requirements-nfr-verification"></a>
 ## 📊 12. Non-Functional Requirements (NFR) Verification
 
 | Requirement Metric | Target Benchmark | RoadSense AI Measured Benchmark | Verification Status |
