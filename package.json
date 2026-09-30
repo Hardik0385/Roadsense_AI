@@ -10,7 +10,8 @@
   "scripts": {
     "start": "docker compose up -d",
     "stop": "docker compose down",
-    "build": "docker compose build",
+    "build": "npm run build --workspaces --if-present",
+    "build:api": "tsc -p apps/api/tsconfig.json",
     "test": "npm run test --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present"
   },
