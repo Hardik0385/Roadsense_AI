@@ -21,12 +21,12 @@ export default function Sidebar() {
         href="/"
         className="h-16 flex items-center px-4 border-b border-slate-200/70 bg-gradient-to-r from-slate-50/50 via-white/50 to-slate-50/30 shrink-0 select-none cursor-pointer hover:bg-slate-50/80 transition-colors group"
       >
-        <div className="w-12 h-12 rounded-full overflow-hidden mr-3 shadow-md shadow-slate-900/20 shrink-0 border border-slate-800/80 bg-transparent flex items-center justify-center">
+        <div className="w-12 h-12 rounded-full overflow-hidden mr-3 shadow-md shadow-slate-900/20 shrink-0 border border-slate-800/80 bg-slate-900 flex items-center justify-center p-1">
           <img
-            src="/roadsense_logo.jpg"
+            src="/roadsense_logo_transparent.png"
             alt="RoadSense AI Logo"
             draggable={false}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 select-none pointer-events-none"
+            className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300 select-none pointer-events-none"
           />
         </div>
         <div className="min-w-0 flex items-center gap-1.5 select-none">

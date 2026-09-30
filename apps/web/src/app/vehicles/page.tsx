@@ -51,7 +51,7 @@ const CITIES = [
   'Nagpur', 'Indore', 'Patna', 'Bhopal'
 ];
 
-export default function VehiclesPage() {
+function VehiclesContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const inspectParam = searchParams.get('inspect');
@@ -550,5 +550,20 @@ export default function VehiclesPage() {
         document.body
       )}
     </div>
+  );
+}
+
+export default function VehiclesPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex items-center gap-3 text-slate-500 font-medium">
+          <RefreshCw className="animate-spin text-slate-700" size={20} />
+          <span>Loading Vehicle Fleet Operations...</span>
+        </div>
+      </div>
+    }>
+      <VehiclesContent />
+    </Suspense>
   );
 }

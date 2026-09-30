@@ -137,8 +137,8 @@ export default function FloatingAiAssistant() {
           onClick={() => setIsOpen(true)}
           className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-full shadow-xl shadow-slate-900/30 border border-slate-700/60 transition-all transform hover:scale-105 group"
         >
-          <div className="relative w-6 h-6 rounded-lg overflow-hidden border border-slate-700 shrink-0">
-            <img src="/roadsense_icon.jpg" alt="RoadSense Icon" className="w-full h-full object-cover" />
+          <div className="relative w-6 h-6 rounded-lg overflow-hidden border border-slate-700 shrink-0 bg-slate-950 flex items-center justify-center p-0.5">
+            <img src="/roadsense_logo_transparent.png" alt="RoadSense Icon" className="w-full h-full object-contain" />
             <span className="absolute -top-1 -right-1 w-2 h-2 bg-emerald-400 rounded-full border border-slate-900 animate-pulse"></span>
           </div>
           <span className="text-sm font-semibold tracking-wide">RoadSense AI</span>
@@ -165,8 +165,8 @@ export default function FloatingAiAssistant() {
             {/* Top Bar - Executive Luxury Dark Gradient Header */}
             <div className="bg-slate-900 px-5 py-3.5 border-b border-slate-800 flex items-center justify-between shrink-0 shadow-md">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-10 h-10 rounded-2xl overflow-hidden bg-slate-800 border border-slate-700 shrink-0 shadow-2xs">
-                  <img src="/roadsense_icon.jpg" alt="RoadSense Icon" className="w-full h-full object-cover" />
+                <div className="w-10 h-10 rounded-2xl overflow-hidden bg-slate-950 border border-slate-700 shrink-0 shadow-2xs flex items-center justify-center p-1">
+                  <img src="/roadsense_logo_transparent.png" alt="RoadSense Icon" className="w-full h-full object-contain" />
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
