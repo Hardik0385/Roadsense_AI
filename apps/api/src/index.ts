@@ -11,12 +11,18 @@ import smartcar from 'smartcar';
 
 dotenv.config();
 
-// Smartcar setup
+// Smartcar OAuth 2.0 Configuration (Dynamic Env with Localhost & Production Fallbacks)
+const SMARTCAR_CLIENT_ID = process.env.SMARTCAR_CLIENT_ID || 'client_01M3SPM7Y4F8YK5683AZSQEFYJ';
+const SMARTCAR_CLIENT_SECRET = process.env.SMARTCAR_CLIENT_SECRET || '40409d68ede577ea7c15606a94243129c5cdd11add767454eb3e31a3bca16976';
+const SMARTCAR_REDIRECT_URI = process.env.SMARTCAR_REDIRECT_URI || 'http://localhost:3001/api/v1/smartcar/exchange';
+const SMARTCAR_MODE = (process.env.SMARTCAR_MODE as 'test' | 'live') || 'test';
+const WEB_APP_URL = process.env.WEB_APP_URL || 'http://localhost:3000';
+
 const client = new smartcar.AuthClient({
-  clientId: 'client_01M3SPM7Y4F8YK5683AZSQEFYJ',
-  clientSecret: '40409d68ede577ea7c15606a94243129c5cdd11add767454eb3e31a3bca16976',
-  redirectUri: 'http://localhost:3001/api/v1/smartcar/exchange',
-  mode: 'test',
+  clientId: SMARTCAR_CLIENT_ID,
+  clientSecret: SMARTCAR_CLIENT_SECRET,
+  redirectUri: SMARTCAR_REDIRECT_URI,
+  mode: SMARTCAR_MODE,
 });
 
 let globalSmartcarAccess: any = null;
@@ -24,7 +30,7 @@ let globalSmartcarAccess: any = null;
 const fastify = Fastify({ logger: true });
 
 fastify.register(cors, {
-  origin: '*', // For development
+  origin: '*', // For development & multi-origin deployments
 });
 fastify.register(websocket);
 
@@ -49,7 +55,7 @@ fastify.get('/health', async (request, reply) => {
   return { status: 'ok', timestamp: new Date().toISOString() };
 });
 
-// REST API Examples
+// Smartcar OAuth 2.0 Endpoints
 fastify.get('/api/v1/smartcar/login', async (request, reply) => {
   const authUrl = client.getAuthUrl(['read_vehicle_info', 'read_location', 'read_odometer']);
   reply.redirect(authUrl);
@@ -57,11 +63,32 @@ fastify.get('/api/v1/smartcar/login', async (request, reply) => {
 
 fastify.get('/api/v1/smartcar/exchange', async (request: any, reply) => {
   const code = request.query.code;
-  if (!code) return reply.status(400).send('No code provided');
+  const error = request.query.error;
+
+  if (error) {
+    return reply.redirect(`${WEB_APP_URL}/vehicles?smartcar_auth=error&message=${encodeURIComponent(error)}`);
+  }
+
+  if (!code) {
+    return reply.status(400).send({ error: 'No authorization code provided by Smartcar OAuth redirect' });
+  }
   
-  const access = await client.exchangeCode(code);
-  globalSmartcarAccess = access; // Store in memory for demo
-  return reply.send({ success: true, message: 'Smartcar authorized successfully. Close this window and return to dashboard.' });
+  try {
+    const access = await client.exchangeCode(code);
+    globalSmartcarAccess = access; // Store session token
+    return reply.redirect(`${WEB_APP_URL}/vehicles?smartcar_auth=success`);
+  } catch (err: any) {
+    request.log.error(err, 'Failed to exchange Smartcar OAuth code');
+    return reply.redirect(`${WEB_APP_URL}/vehicles?smartcar_auth=error&message=${encodeURIComponent(err.message || 'Token exchange failed')}`);
+  }
+});
+
+fastify.get('/api/v1/smartcar/status', async (request, reply) => {
+  return {
+    connected: !!globalSmartcarAccess,
+    mode: SMARTCAR_MODE,
+    redirectUri: SMARTCAR_REDIRECT_URI
+  };
 });
 
 fastify.get('/api/v1/smartcar/vehicles', async (request, reply) => {

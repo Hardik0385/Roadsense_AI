@@ -169,8 +169,13 @@ function VehiclesContent() {
     return { total, normalCount, warningCount, criticalCount, avgSpeed, smartcarCount };
   }, [vehicles]);
 
+  const smartcarAuthParam = searchParams.get('smartcar_auth');
+  const smartcarMessageParam = searchParams.get('message');
+  const [authBannerDismissed, setAuthBannerDismissed] = useState(false);
+
   const handleConnectSmartcar = () => {
-    window.open('http://localhost:3001/api/v1/smartcar/login', '_blank');
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    window.location.href = `${apiUrl}/api/v1/smartcar/login`;
   };
 
   const handleCloseModal = () => {
@@ -185,6 +190,47 @@ function VehiclesContent() {
 
   return (
     <div className="p-6">
+      {/* Smartcar OAuth Feedback Banner */}
+      {smartcarAuthParam === 'success' && !authBannerDismissed && (
+        <div className="mb-6 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between shadow-sm animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-emerald-500 text-white shadow-xs">
+              <CheckCircle2 size={18} />
+            </div>
+            <div>
+              <p className="text-sm font-extrabold text-emerald-900">Smartcar OAuth Connection Successful</p>
+              <p className="text-xs text-emerald-700 font-medium">OEM Connected Vehicle IoT stream synchronized with RoadSense AI telemetry engine.</p>
+            </div>
+          </div>
+          <button 
+            onClick={() => setAuthBannerDismissed(true)}
+            className="p-1.5 hover:bg-emerald-500/20 text-emerald-800 rounded-lg transition-colors text-xs font-semibold"
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
+      {smartcarAuthParam === 'error' && !authBannerDismissed && (
+        <div className="mb-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between shadow-sm animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-amber-500 text-white shadow-xs">
+              <OctagonAlert size={18} />
+            </div>
+            <div>
+              <p className="text-sm font-extrabold text-amber-900">Smartcar OAuth Authorization Error</p>
+              <p className="text-xs text-amber-700 font-medium">{smartcarMessageParam || 'OAuth code exchange could not be completed. Please verify API credentials.'}</p>
+            </div>
+          </div>
+          <button 
+            onClick={() => setAuthBannerDismissed(true)}
+            className="p-1.5 hover:bg-amber-500/20 text-amber-800 rounded-lg transition-colors text-xs font-semibold"
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:justify-between md:items-end mb-8 gap-4">
         <div>
