@@ -25,9 +25,7 @@ export const metadata: Metadata = {
   },
 };
 
-import Sidebar from "@/components/Sidebar";
-import Header from "@/components/Header";
-import FloatingAiAssistant from "@/components/FloatingAiAssistant";
+import AppShell from "@/components/AppShell";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -51,20 +49,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.4)_0%,transparent_100%)] opacity-70" />
         </div>
 
-        {/* Floating App Cockpit Shell with breathing margins */}
-        <div className="flex h-screen w-full p-3.5 gap-3.5 relative z-10 box-border overflow-hidden">
-          {/* Floating Sidebar */}
-          <Sidebar />
-
-          {/* Floating Main Content Area with Floating Top Bar */}
-          <div className="flex-1 flex flex-col min-w-0 h-full gap-3.5 overflow-hidden">
-            <Header />
-            <main className="flex-1 overflow-auto rounded-3xl bg-white/95 border border-slate-200/80 shadow-md shadow-slate-200/30">
-              {children}
-            </main>
-          </div>
-        </div>
-        <FloatingAiAssistant />
+        <AppShell>
+          {children}
+        </AppShell>
       </body>
     </html>
   );
