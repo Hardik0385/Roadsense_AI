@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { 
   Bell, 
@@ -54,6 +55,7 @@ const QUICK_PAGES = [
 
 export default function Header() {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -76,6 +78,7 @@ export default function Header() {
   const searchRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    setMounted(true);
     setCurrentUser(getSessionUser());
     setNotifications(getNotifications());
 
@@ -644,25 +647,31 @@ export default function Header() {
         )}
       </div>
 
-      {/* Edit Profile & Post Modal */}
-      {isEditProfileOpen && (
-        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 z-[10006] animate-in fade-in duration-200">
-          <div className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+      {/* Edit Profile & Post Modal (Portaled directly to body) */}
+      {mounted && isEditProfileOpen && createPortal(
+        <div 
+          onClick={() => setIsEditProfileOpen(false)}
+          className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-[999999] overflow-y-auto animate-in fade-in duration-200"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white border border-slate-200 rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl shadow-black/60 relative m-auto my-auto animate-in zoom-in-95 duration-200"
+          >
             <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
-                  <User size={16} />
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                  <User size={18} />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900">Edit Operator Profile & Post</h3>
+                  <h3 className="text-sm sm:text-base font-bold text-slate-900">Edit Operator Profile & Post</h3>
                   <p className="text-[11px] text-slate-400">Displayed in top right console header</p>
                 </div>
               </div>
               <button 
                 onClick={() => setIsEditProfileOpen(false)}
-                className="text-slate-400 hover:text-slate-600 p-1"
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
               >
-                <X size={16} />
+                <X size={18} />
               </button>
             </div>
 
@@ -677,7 +686,7 @@ export default function Header() {
                   onChange={(e) => setEditName(e.target.value)}
                   placeholder="Hardik Agrawal"
                   required
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-emerald-500 font-medium"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-emerald-500 font-medium"
                 />
               </div>
 
@@ -691,7 +700,7 @@ export default function Header() {
                   onChange={(e) => setEditRole(e.target.value)}
                   placeholder="Fleet Operations Lead / NHAI Dispatcher"
                   required
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-emerald-500 font-medium"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-emerald-500 font-medium"
                 />
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {['Fleet Operations Lead', 'NHAI Incident Dispatcher', 'IoT Telematics Lead', 'Highway Patrol Commander'].map((role) => (
@@ -699,7 +708,7 @@ export default function Header() {
                       key={role}
                       type="button"
                       onClick={() => setEditRole(role)}
-                      className="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200 transition-colors text-slate-600"
+                      className="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200 transition-colors text-slate-600 font-medium"
                     >
                       + {role}
                     </button>
@@ -716,28 +725,29 @@ export default function Header() {
                   value={editDept}
                   onChange={(e) => setEditDept(e.target.value)}
                   placeholder="National Operations Center"
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-emerald-500 font-medium"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-emerald-500 font-medium"
                 />
               </div>
 
-              <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
+              <div className="pt-3 flex items-center justify-end gap-2.5 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setIsEditProfileOpen(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition-colors"
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-500/20"
+                  className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-500/20 active:scale-[0.98]"
                 >
                   Save & Update Header
                 </button>
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </header>
   );
