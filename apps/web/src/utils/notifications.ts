@@ -1,5 +1,7 @@
 "use client";
 
+import { getSessionUser, getAccountStorageKey } from './auth';
+
 export interface RoadSenseNotification {
   id: string;
   title: string;
@@ -13,9 +15,7 @@ export interface RoadSenseNotification {
   roadName?: string;
 }
 
-const NOTIFICATIONS_STORAGE_KEY = 'roadsense_live_notifications';
-
-// Default initial notifications so the bell looks active and realistic
+// Initial realistic alerts for fresh accounts
 const DEFAULT_NOTIFICATIONS: RoadSenseNotification[] = [
   {
     id: 'notif_init_1',
@@ -51,10 +51,23 @@ const DEFAULT_NOTIFICATIONS: RoadSenseNotification[] = [
   }
 ];
 
+function getStorageTarget(): { storage: Storage; key: string } {
+  const user = getSessionUser();
+  const key = getAccountStorageKey('roadsense_notifications');
+  if (user?.isDemo && typeof window !== 'undefined') {
+    return { storage: sessionStorage, key };
+  }
+  return { storage: localStorage, key };
+}
+
+/**
+ * Retrieves notifications retained specifically for the currently logged-in account.
+ */
 export function getNotifications(): RoadSenseNotification[] {
   if (typeof window === 'undefined') return DEFAULT_NOTIFICATIONS;
   try {
-    const saved = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
+    const { storage, key } = getStorageTarget();
+    const saved = storage.getItem(key);
     if (saved) {
       return JSON.parse(saved);
     }
@@ -64,16 +77,23 @@ export function getNotifications(): RoadSenseNotification[] {
   return DEFAULT_NOTIFICATIONS;
 }
 
+/**
+ * Persists notifications retained specifically for the currently logged-in account.
+ */
 export function saveNotifications(notifications: RoadSenseNotification[]): void {
   if (typeof window === 'undefined') return;
   try {
-    localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(notifications));
+    const { storage, key } = getStorageTarget();
+    storage.setItem(key, JSON.stringify(notifications));
     window.dispatchEvent(new CustomEvent('roadsense_notifications_updated'));
   } catch (e) {
     console.error('Failed to save notifications', e);
   }
 }
 
+/**
+ * Dispatches an emergency patrol/medical unit and saves it to the user's notification log.
+ */
 export function addDispatchNotification(params: {
   incidentId: string;
   roadName: string;
@@ -95,7 +115,7 @@ export function addDispatchNotification(params: {
   };
 
   const current = getNotifications();
-  const updated = [newNotif, ...current].slice(0, 30); // Keep latest 30
+  const updated = [newNotif, ...current].slice(0, 30); // Retain latest 30 alerts per account
   saveNotifications(updated);
   return newNotif;
 }

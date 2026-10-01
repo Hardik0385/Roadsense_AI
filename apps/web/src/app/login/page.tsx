@@ -32,7 +32,10 @@ function LoginContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const expiredParam = searchParams.get('expired');
+  const [error, setError] = useState<string | null>(
+    expiredParam === 'true' ? 'Your security session has expired after 24 hours of inactivity. Please sign in again.' : null
+  );
   const [success, setSuccess] = useState<string | null>(null);
 
   // Onboarding profile state for new Google/GitHub logins
@@ -156,10 +159,11 @@ function LoginContent() {
       name: customName.trim() || onboardingUser.name,
       role: customRole.trim() || 'Operations Officer',
       department: customDept.trim() || 'Indian Corridor Logistics',
-      avatarInitials: initials
+      avatarInitials: initials,
+      isDemo: false
     };
 
-    setSessionUser(finalizedUser);
+    setSessionUser(finalizedUser, false);
     setSuccess(`Welcome, ${finalizedUser.name} (${finalizedUser.role})! Launching console...`);
     setTimeout(() => {
       router.push(redirectUrl);
@@ -187,10 +191,11 @@ function LoginContent() {
         avatarInitials: email.slice(0, 2).toUpperCase(),
         department: 'Indian Corridor Logistics',
         provider: 'credentials',
-        token: `jwt_rs_${Math.random().toString(36).substring(2)}`
+        token: `jwt_rs_${Math.random().toString(36).substring(2)}`,
+        isDemo: false
       };
 
-      setSessionUser(loggedUser);
+      setSessionUser(loggedUser, false);
       setSuccess(`Authenticated as ${loggedUser.name}! Redirecting to cockpit...`);
       setTimeout(() => {
         router.push(redirectUrl);
@@ -222,8 +227,8 @@ function LoginContent() {
 
   const handleDemoQuickLogin = (key: keyof typeof DEMO_USERS) => {
     const user = DEMO_USERS[key];
-    setSessionUser(user);
-    setSuccess(`Welcome back, ${user.name}!`);
+    setSessionUser(user, true); // Stored in sessionStorage ONLY (auto-resets when window closes)
+    setSuccess(`Loaded temporary session: ${user.name} (resets on window close)`);
     setTimeout(() => {
       router.push(redirectUrl);
     }, 400);

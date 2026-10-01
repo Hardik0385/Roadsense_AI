@@ -14,6 +14,7 @@ import {
   MapPin
 } from 'lucide-react';
 import { getLiveTrafficData } from '@/utils/trafficApi';
+import { getSessionUser, getAccountStorageKey } from '@/utils/auth';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -23,44 +24,73 @@ interface Message {
   timestamp?: string;
 }
 
+const DEFAULT_WELCOME_MSG: Message = {
+  role: 'assistant',
+  content: 'Hello! I am <strong>RoadSense AI</strong>, your real-time traffic controller and fleet operations assistant across India. Ask me about live corridor stress, weather, routing, or telemetry.',
+  confidence: 100
+};
+
 export default function FloatingAiAssistant() {
   const [isOpen, setIsOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
-  const [chatHistory, setChatHistory] = useState<Message[]>([]);
+  const [chatHistory, setChatHistory] = useState<Message[]>([DEFAULT_WELCOME_MSG]);
   const [trafficContext, setTrafficContext] = useState<any[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Load chat history from localStorage
-  useEffect(() => {
-    const saved = localStorage.getItem('roadsense_chat_history');
-    if (saved) {
-      try {
-        setChatHistory(JSON.parse(saved));
-      } catch (e) {
-        console.error('Failed to parse chat history', e);
-      }
-    } else {
-      setChatHistory([
-        {
-          role: 'assistant',
-          content: 'Hello! I am <strong>RoadSense AI</strong>, your real-time traffic controller and fleet operations assistant across India. Ask me about live corridor stress, weather, routing, or telemetry.',
-          confidence: 100
-        }
-      ]);
-    }
+  // Load account-specific chat history
+  const loadAccountChat = () => {
+    if (typeof window === 'undefined') return;
+    const user = getSessionUser();
+    const storageKey = getAccountStorageKey('roadsense_chat_history');
+    const storage = user?.isDemo ? sessionStorage : localStorage;
 
-    // Pre-fetch live traffic context for AI grounding
-    getLiveTrafficData().then(data => setTrafficContext(data)).catch(() => {});
+    try {
+      const saved = storage.getItem(storageKey);
+      if (saved) {
+        setChatHistory(JSON.parse(saved));
+      } else {
+        setChatHistory([DEFAULT_WELCOME_MSG]);
+      }
+    } catch (e) {
+      console.error('Failed to parse account chat history', e);
+      setChatHistory([DEFAULT_WELCOME_MSG]);
+    }
+  };
+
+  useEffect(() => {
+    loadAccountChat();
+
+    // Re-load chat history whenever user session changes
+    const handleAuthChange = () => {
+      loadAccountChat();
+    };
+
+    window.addEventListener('roadsense_auth_changed', handleAuthChange);
+    return () => window.removeEventListener('roadsense_auth_changed', handleAuthChange);
   }, []);
 
-  // Save chat history to localStorage
+  // Save chat history to account-specific storage whenever messages update
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const user = getSessionUser();
+    const storageKey = getAccountStorageKey('roadsense_chat_history');
+    const storage = user?.isDemo ? sessionStorage : localStorage;
+
     if (chatHistory.length > 0) {
-      localStorage.setItem('roadsense_chat_history', JSON.stringify(chatHistory));
+      try {
+        storage.setItem(storageKey, JSON.stringify(chatHistory));
+      } catch (e) {
+        console.error('Failed to save chat history', e);
+      }
     }
   }, [chatHistory]);
+
+  // Pre-fetch live traffic context for AI grounding
+  useEffect(() => {
+    getLiveTrafficData().then(data => setTrafficContext(data)).catch(() => {});
+  }, []);
 
   // Scroll to bottom on new message
   useEffect(() => {
