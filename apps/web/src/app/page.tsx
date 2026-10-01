@@ -205,20 +205,21 @@ export default function Dashboard() {
           <p className="text-slate-500 text-sm">Real-time national telemetry ingestion, corridor bottlenecks, and predictive road stress across 16 Indian cities</p>
         </div>
         
-        <div className="flex flex-wrap items-center gap-2.5 text-sm">
+        {/* Unified Telemetry & Control Toolbar */}
+        <div className="flex items-center bg-white border border-slate-200/90 rounded-2xl p-1 shadow-xs divide-x divide-slate-200/70">
           {/* City Weather Selector Dropdown */}
           <div className="relative">
             <button 
               type="button"
               onClick={() => setIsCityDropdownOpen(!isCityDropdownOpen)}
-              className="flex items-center space-x-2 bg-white border border-slate-200/90 rounded-xl px-3.5 py-2 shadow-xs hover:border-slate-300 hover:bg-slate-50/80 transition-all text-xs md:text-sm font-medium text-slate-800 cursor-pointer"
+              className="flex items-center space-x-2 px-3 py-1.5 rounded-xl hover:bg-slate-100/70 transition-all text-xs font-semibold text-slate-800 cursor-pointer"
             >
               <MapPin size={14} className="text-indigo-600 shrink-0" />
               <span>{selectedWeatherCity.name}</span>
-              <span className="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 border border-slate-200">
+              <span className="text-[10px] font-mono font-medium px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 border border-slate-200/60">
                 {selectedWeatherCity.code}
               </span>
-              <ChevronDown size={14} className={`text-slate-400 transition-transform duration-200 ${isCityDropdownOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown size={13} className={`text-slate-400 transition-transform duration-200 ${isCityDropdownOpen ? 'rotate-180' : ''}`} />
             </button>
 
             {isCityDropdownOpen && (
@@ -228,7 +229,7 @@ export default function Dashboard() {
                   onClick={() => setIsCityDropdownOpen(false)} 
                 />
                 <div className="absolute right-0 mt-2 w-64 max-h-72 overflow-y-auto bg-white/95 backdrop-blur-md border border-slate-200 rounded-2xl shadow-xl z-40 p-1.5 space-y-0.5">
-                  <div className="px-3 py-1.5 text-[11px] font-semibold tracking-wider text-slate-400 uppercase border-b border-slate-100 mb-1">
+                  <div className="px-3 py-1.5 text-[10px] font-bold tracking-wider text-slate-400 uppercase border-b border-slate-100 mb-1">
                     Select Urban Corridor (16 Cities)
                   </div>
                   {INDIAN_CITIES.map((city) => {
@@ -241,7 +242,7 @@ export default function Dashboard() {
                           setSelectedWeatherCity(city);
                           setIsCityDropdownOpen(false);
                         }}
-                        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs text-left transition-colors cursor-pointer ${
+                        className={`w-full flex items-center justify-between px-3 py-1.5 rounded-xl text-xs text-left transition-colors cursor-pointer ${
                           isSelected 
                             ? 'bg-indigo-50 text-indigo-950 font-semibold border border-indigo-100' 
                             : 'text-slate-700 hover:bg-slate-100/80'
@@ -264,17 +265,20 @@ export default function Dashboard() {
             )}
           </div>
 
+          {/* Live Weather Indicator */}
           {weatherData && (
-            <div className="flex items-center bg-white border border-slate-200/90 rounded-xl px-3.5 py-2 shadow-xs">
-              <img src={`https://openweathermap.org/img/wn/${weatherData.icon}.png`} alt="weather icon" className="w-5 h-5 mr-2" />
-              <span className="text-slate-800 font-medium">{weatherData.temp}°C, <span className="text-slate-500 capitalize">{weatherData.description}</span></span>
+            <div className="flex items-center px-3 py-1.5 space-x-2 text-xs">
+              <img src={`https://openweathermap.org/img/wn/${weatherData.icon}.png`} alt="weather" className="w-5 h-5 -my-1" />
+              <span className="text-slate-800 font-semibold">{weatherData.temp}°C</span>
+              <span className="text-slate-400 capitalize hidden sm:inline">• {weatherData.description}</span>
             </div>
           )}
 
-          <div className="flex items-center space-x-2 bg-white border border-slate-200/90 px-3.5 py-2 rounded-xl shadow-xs">
-            <span className={`w-2.5 h-2.5 rounded-full ${connectionStatus === 'LIVE' ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`}></span>
-            <span className={connectionStatus === 'LIVE' ? 'text-emerald-700 font-medium' : 'text-rose-600 font-medium'}>
-              {connectionStatus} • 500 Active Units
+          {/* Fleet Status Badge */}
+          <div className="flex items-center px-3 py-1.5 space-x-2 text-xs">
+            <span className={`w-2 h-2 rounded-full ${connectionStatus === 'LIVE' ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`}></span>
+            <span className={connectionStatus === 'LIVE' ? 'text-emerald-700 font-semibold' : 'text-rose-600 font-semibold'}>
+              {connectionStatus} <span className="text-slate-400 font-normal hidden sm:inline">• 500 Units</span>
             </span>
           </div>
         </div>
