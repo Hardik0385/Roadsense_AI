@@ -29,8 +29,10 @@
 8. [Agentic AI Controller (Motorq Fuse Equivalent)](#8-agentic-ai-controller-motorq-fuse-equivalent)
 9. [Future Scope & Government Integration Roadmap](#9-future-scope--government-integration-roadmap)
 10. [Local Quickstart & Deployment Guide](#10-local-quickstart--deployment-guide)
-11. [REST & WebSocket API Reference](#11-rest--websocket-api-reference)
-12. [Non-Functional Requirements (NFR) Verification](#12-non-functional-requirements-nfr-verification)
+11. [API Keys & Developer Portals Directory](#11-api-keys--developer-portals-directory)
+12. [REST & WebSocket API Reference](#12-rest--websocket-api-reference)
+13. [Non-Functional Requirements (NFR) Verification](#13-non-functional-requirements-nfr-verification)
+14. [Screenshots & Visual Walkthrough](#14-screenshots--visual-walkthrough)
 
 ---
 
@@ -64,6 +66,98 @@ Modern connected vehicles generate up to **25 GB of time-series telemetry per ho
 
 <a id="3-end-to-end-system-architecture"></a>
 ## 🏛️ 3. End-to-End System Architecture
+
+### 3.1 Interactive Architecture Flow (Mermaid Diagram)
+
+```mermaid
+flowchart TD
+    subgraph S1["1. Telemetry Ingestion Layer"]
+        V["100,000 Connected Fleet Vehicles<br/>(OBD-II, CAN-bus, GPS, Accelerometer)"]
+        S["Smartcar OEM Cloud API<br/>(Battery SoC, Odometer, Lock Status)"]
+        T["TomTom Live Traffic API<br/>(16-City Indian Metro Incidents)"]
+        W["OpenWeatherMap API<br/>(Real-Time Meteorological Telemetry)"]
+    end
+
+    subgraph S2["2. Validation & Deduplication Gateway"]
+        IG["Fastify Ingestion Gateway"]
+        VIN["ISO 3779 17-Char VIN Validator"]
+        BF["Streaming Bloom Filter Deduplicator"]
+        DTC["SAE J2019 Fault Code Parser"]
+    end
+
+    subgraph S3["3. High-Throughput Event Streaming"]
+        K["Apache Kafka Multi-Partition Cluster"]
+        T1[("Topic: vehicle.telemetry")]
+        T2[("Topic: road.stress")]
+        T3[("Topic: incident.alerts")]
+    end
+
+    subgraph S4["4. Real-Time Analytics Engines"]
+        SE1["Sliding-Window Corridor Stress Engine"]
+        SE2["Dijkstra EV Range & Charging Model"]
+        SE3["Predictive DTC Mechanical Anomaly Engine"]
+        SE4["Autonomous Incident Dispatch Triager"]
+    end
+
+    subgraph S5["5. Polyglot Persistence Layer"]
+        R[("Redis 7.2 Cache<br/>(Sub-ms Hot Coordinates & Geohashes)")]
+        TS[("TimescaleDB / Partitioned PG<br/>(100k events/sec TimeSeries)")]
+        PG[("PostgreSQL 15 3NF Core<br/>(Fleets, Drivers, Trips, Audit Logs)")]
+        PV[("pgvector Embeddings<br/>(Incident RAG & Semantic Context)")]
+    end
+
+    subgraph S6["6. Enterprise API & Agentic AI Controller"]
+        FAP["Fastify REST & WebSocket API Gateway<br/>(Port 3001 · JWT & RBAC Protected)"]
+        AI["Agentic AI Operations Controller<br/>(Qwen 2.5 72B / Llama 3.3 70B / Local Heuristic)"]
+    end
+
+    subgraph S7["7. Frontend Operations Command Cockpit"]
+        UI1["Executive Overview & 16-City Weather Hub"]
+        UI2["Incident Response Triage Grid & Table"]
+        UI3["Fleet Telemetry & Deep Vehicle Inspection"]
+        UI4["Geospatial Road Stress Heatmap (MapLibre)"]
+        UI5["Universal Spotlight Search (Cmd+K)"]
+        UI6["Grounded Operations AI Assistant Drawer"]
+    end
+
+    V --> IG
+    S --> IG
+    T --> IG
+    W --> IG
+
+    IG --> VIN
+    VIN --> BF
+    BF --> DTC
+    DTC --> K
+
+    K --> T1
+    K --> T2
+    K --> T3
+
+    T1 --> SE1
+    T1 --> SE2
+    T1 --> SE3
+    T3 --> SE4
+
+    SE1 --> R
+    SE2 --> TS
+    SE3 --> PG
+    SE4 --> PV
+
+    R --> FAP
+    TS --> FAP
+    PG --> FAP
+    PV --> AI
+
+    FAP <-->|WebSocket Stream & REST| UI1
+    FAP <-->|WebSocket Stream & REST| UI2
+    FAP <-->|WebSocket Stream & REST| UI3
+    FAP <-->|WebSocket Stream & REST| UI4
+    FAP <-->|WebSocket Stream & REST| UI5
+    AI <-->|Grounded Telemetry Context| UI6
+```
+
+### 3.2 System Topology (ASCII Reference)
 
 ```
   [100,000 Connected Vehicles]        [Smartcar IoT Cloud]        [TomTom Live Traffic API]
@@ -193,7 +287,7 @@ roadsense/
 ## 🖥️ 7. Frontend Operations Cockpit & UI Features
 
 - **Atmospheric Floating Cockpit Design:** Ambient emerald and rose atmospheric background gradients with floating sidebar and top header cockpit shells.
-- **Incident Response Triage:** Responsive **Card Grid View** with real-time severity filters (`Critical`, `High`, `Medium`), delay statistics, impacted vehicle counts, and one-click **Dispatch Unit** actions.
+- **Incident Response Triage:** Responsive **Card Grid & Table Views** with real-time severity filters (`Critical`, `High`, `Medium`), delay statistics, impacted vehicle counts, and one-click **Dispatch Unit** actions.
 - **Fleet Telemetry & Vehicles:** Live OBD-II telemetry table with live speed, engine temperature, battery/fuel levels, and deep-linking inspection modals (`/vehicles?inspect=<ID>`).
 - **Road Intelligence Geospatial Map:** Interactive map with Light Streets, Light Minimal, Satellite, and Dark mode layer switchers, and real-time stress heatmap legend overlay.
 - **Universal Search Spotlight (<kbd>Cmd</kbd>/<kbd>Ctrl</kbd> + <kbd>K</kbd>):** Instant global search across vehicles, drivers, road corridors, cities, and platform pages with keyboard navigation.
@@ -268,7 +362,14 @@ docker compose up -d
 ```
 *Starts Apache Kafka, Zookeeper, PostgreSQL (with TimescaleDB & pgvector), Redis, Prometheus, and Grafana.*
 
-### Step 3: Run Microservices
+### Step 3: Configure Environment Variables
+Copy the template files and fill in your API credentials (refer to [Section 11](#11-api-keys--developer-portals-directory) below):
+```bash
+cp .env.example .env
+cp apps/web/.env.example apps/web/.env.local
+```
+
+### Step 4: Run Microservices
 ```bash
 # Terminal 1: Fastify Backend API Gateway (Port 3001)
 npm run start -w @roadsense/api
@@ -284,8 +385,41 @@ Open **`http://localhost:3000`** in your browser to access the live RoadSense AI
 
 ---
 
-<a id="11-rest--websocket-api-reference"></a>
-## 📡 11. REST & WebSocket API Reference
+<a id="11-api-keys--developer-portals-directory"></a>
+## 🔑 11. API Keys & Developer Portals Directory
+
+If you want to run RoadSense AI locally with full live integrations (OAuth login, live traffic incidents, meteorological telemetry, and AI Assistant), extract your free API keys from the following portals:
+
+| Service / Integration | Developer Portal Link | Environment Variable(s) | Purpose in RoadSense AI |
+| :--- | :--- | :--- | :--- |
+| **Google Cloud Console** | [console.cloud.google.com/apis/credentials](https://console.cloud.google.com/apis/credentials) | `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | Google OAuth 2.0 Sign-In for operations staff |
+| **GitHub Developer Settings** | [github.com/settings/developers](https://github.com/settings/developers) | `GITHUB_CLIENT_ID`<br/>`GITHUB_CLIENT_SECRET`<br/>`NEXT_PUBLIC_GITHUB_CLIENT_ID` | GitHub OAuth Sign-In & Developer Authentication |
+| **TomTom Developer Portal** | [developer.tomtom.com](https://developer.tomtom.com/) | `TOMTOM_API_KEY`<br/>`NEXT_PUBLIC_TOMTOM_API_KEY` | Real-time traffic incident stream & congestion delay across 16 Indian cities |
+| **OpenWeatherMap API** | [openweathermap.org/api](https://openweathermap.org/api) | `OPENWEATHER_API_KEY` | Live meteorological telemetry on Overview city selector |
+| **OpenRouter AI / Groq Cloud** | [openrouter.ai](https://openrouter.ai/) / [console.groq.com](https://console.groq.com/) | `OPENROUTER_API_KEY`<br/>`GROQ_API_KEY` | Multi-model LLM inference (Qwen 2.5 72B & Llama 3.3 70B) for AI Assistant |
+| **Mapbox** | [mapbox.com](https://www.mapbox.com/) | `NEXT_PUBLIC_MAPBOX_TOKEN` (Optional) | High-resolution vector basemaps & custom cartography |
+| **Smartcar API** | [smartcar.com](https://smartcar.com/) | `SMARTCAR_CLIENT_ID`<br/>`SMARTCAR_CLIENT_SECRET` | OEM connected vehicle telematics & State-of-Charge IoT stream |
+
+### Sample `apps/web/.env.local` Template
+```bash
+# TomTom Live Traffic (16 Indian Metropolitan Corridors)
+NEXT_PUBLIC_TOMTOM_API_KEY=your_tomtom_api_key_here
+
+# Backend API & Live WebSocket Gateway
+NEXT_PUBLIC_API_URL=http://localhost:3001
+NEXT_PUBLIC_WS_URL=ws://localhost:3001/api/v1/live
+
+# Authentication Providers
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
+NEXT_PUBLIC_GITHUB_CLIENT_ID=your_github_client_id
+GITHUB_CLIENT_ID=your_github_client_id
+GITHUB_CLIENT_SECRET=your_github_client_secret
+```
+
+---
+
+<a id="12-rest--websocket-api-reference"></a>
+## 📡 12. REST & WebSocket API Reference
 
 ### Health & Telemetry Endpoints
 - `GET /health` — Microservice health status, uptime, and memory usage.
@@ -304,8 +438,8 @@ Open **`http://localhost:3000`** in your browser to access the live RoadSense AI
 
 ---
 
-<a id="12-non-functional-requirements-nfr-verification"></a>
-## 📊 12. Non-Functional Requirements (NFR) Verification
+<a id="13-non-functional-requirements-nfr-verification"></a>
+## 📊 13. Non-Functional Requirements (NFR) Verification
 
 | Requirement Metric | Target Benchmark | RoadSense AI Measured Benchmark | Verification Status |
 | :--- | :--- | :--- | :---: |
@@ -319,7 +453,62 @@ Open **`http://localhost:3000`** in your browser to access the live RoadSense AI
 
 ---
 
+<a id="14-screenshots--visual-walkthrough"></a>
+## 📸 14. Screenshots & Visual Walkthrough
+
+> *Paste your application screenshots into the respective sections below.*
+
+### 14.1 Executive Fleet & Road Intelligence (Overview Dashboard)
+*High-velocity KPI summaries (Kafka events/sec, active road disruptions, average fleet stress), 16-city live weather dropdown selector, national corridor stress distribution, and live stream updates.*
+
+![Executive Overview Dashboard](docs/assets/01_overview_dashboard.png)
+
+---
+
+### 14.2 Real-Time Incident Response Triage (Card Grid & Table Views)
+*TomTom live traffic disruptions across 16 Indian cities with severity classifications (`Critical`, `High`, `Medium`), delay counters, affected vehicle counts, and one-click emergency unit dispatch.*
+
+![Incident Response Triage](docs/assets/02_incident_triage.png)
+
+---
+
+### 14.3 Connected Fleet Telemetry & Vehicle Diagnostic Inspection
+*Real-time OBD-II diagnostics, vehicle battery/fuel levels, live engine temperatures, GPS coordinate tracking, and deep vehicle inspection modal.*
+
+![Fleet Telemetry and Vehicles](docs/assets/03_fleet_vehicles.png)
+
+---
+
+### 14.4 Full-Spectrum Geospatial Road Intelligence & Live Stress Heatmap
+*Interactive MapLibre GIS map with 4 basemap styles (Light Streets, Minimal, Satellite, Dark), real-time road stress heatmaps, and city-level corridor bottleneck monitoring.*
+
+![Geospatial Road Intelligence](docs/assets/04_road_intelligence_map.png)
+
+---
+
+### 14.5 Multi-Model Agentic AI Operations Controller (Grounded Assistant)
+*Floating operations assistant with real-time telemetry grounding, multi-turn context retention, quick-action chips, and autonomous dispatch capabilities.*
+
+![Agentic AI Operations Assistant](docs/assets/05_ai_assistant.png)
+
+---
+
+### 14.6 Operator Profile, Role Switcher & Live Notification Center
+*Interactive top bar notification bell with audio-visual dispatch alert badges, persistent operator profile customization modal, and audit logs.*
+
+![Operator Profile and Notifications](docs/assets/06_operator_notifications.png)
+
+---
+
+### 14.7 Secure Enterprise Authentication & Inactivity Session Protection
+*Corporate credentials, Google OAuth, GitHub OAuth, role-based access control (RBAC), and 24-hour inactivity session persistence.*
+
+![Login and Authentication](docs/assets/07_login_auth.png)
+
+---
+
 ## 👨‍💻 Author & Acknowledgements
 - **Lead Engineer & Architect:** Hardik Agrawal
 - **Platform:** RoadSense AI — Enterprise Connected Vehicle & Road Intelligence
 - **Hackathon Domain:** Connected Vehicle Intelligence & IoT Telematics
+

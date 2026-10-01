@@ -237,16 +237,6 @@ function VehiclesContent() {
           </div>
           <p className="text-slate-500 text-sm">Real-time OBD-II telemetry and Smartcar IoT streaming across 16 Indian hubs</p>
         </div>
-
-        <div className="flex items-center space-x-3">
-          <button 
-            onClick={fetchVehicles}
-            className="flex items-center px-3.5 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-sm font-medium shadow-2xs transition-all hover:border-slate-300 cursor-pointer"
-          >
-            <RefreshCw size={14} className="mr-2 text-slate-500" />
-            Refresh Telemetry
-          </button>
-        </div>
       </div>
 
       {/* Metrics Cards Grid */}

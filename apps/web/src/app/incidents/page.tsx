@@ -219,7 +219,7 @@ function IncidentsContent() {
           <div className="flex bg-slate-100 border border-slate-200 rounded-xl p-0.5 shadow-2xs">
             <button
               onClick={() => setViewMode('GRID')}
-              className={`p-2 px-3.5 rounded-lg text-xs font-semibold flex items-center transition-all ${
+              className={`p-2 px-3.5 rounded-lg text-xs font-semibold flex items-center transition-all cursor-pointer ${
                 viewMode === 'GRID' ? 'bg-slate-900 text-white shadow-2xs' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -227,21 +227,13 @@ function IncidentsContent() {
             </button>
             <button
               onClick={() => setViewMode('TABLE')}
-              className={`p-2 px-3.5 rounded-lg text-xs font-semibold flex items-center transition-all ${
+              className={`p-2 px-3.5 rounded-lg text-xs font-semibold flex items-center transition-all cursor-pointer ${
                 viewMode === 'TABLE' ? 'bg-slate-900 text-white shadow-2xs' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               <List size={15} className="mr-1.5" /> Table
             </button>
           </div>
-
-          <button 
-            onClick={fetchIncidents}
-            className="flex items-center px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-sm font-medium shadow-2xs transition-all hover:border-slate-300"
-          >
-            <RefreshCw size={14} className="mr-2 text-slate-500" />
-            Refresh
-          </button>
         </div>
       </div>
 
