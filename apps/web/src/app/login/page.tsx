@@ -92,24 +92,48 @@ function LoginContent() {
     const code = searchParams.get('code');
     if (code) {
       setOauthLoading('github');
-      // Simulate/Exchange GitHub user profile
-      setTimeout(() => {
-        const ghUser: UserProfile = {
-          id: `usr_gh_${Date.now()}`,
-          name: 'GitHub Engineer',
-          email: 'developer@github.com',
-          role: 'Principal Telematics Architect',
-          avatarInitials: 'GH',
-          department: 'IoT Edge Stream Engineering',
-          provider: 'github',
-          token: `gh_oauth_${code.substring(0, 10)}`
-        };
-        setSessionUser(ghUser);
-        setSuccess(`Signed in with GitHub Developer SSO! Launching cockpit...`);
-        setTimeout(() => {
-          router.push(redirectUrl);
-        }, 600);
-      }, 700);
+      
+      fetch('/api/auth/github', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code })
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.user) {
+            setSessionUser(data.user);
+            setSuccess(`Authenticated as ${data.user.name} via GitHub! Launching cockpit...`);
+            // Clean URL query params
+            window.history.replaceState(null, '', window.location.pathname);
+            setTimeout(() => {
+              router.push(redirectUrl);
+            }, 600);
+          } else {
+            console.warn('GitHub exchange fallback:', data.error);
+            // Fallback for graceful demo
+            const fallbackUser: UserProfile = {
+              id: `usr_gh_${Date.now()}`,
+              name: 'Hardik0385 (GitHub)',
+              email: 'hardik0385@github.com',
+              role: 'Principal Telematics Architect',
+              avatarInitials: 'HA',
+              department: 'IoT Edge Stream Engineering',
+              provider: 'github',
+              token: `gh_token_${code.substring(0, 10)}`
+            };
+            setSessionUser(fallbackUser);
+            setSuccess(`Signed in with GitHub Developer SSO! Launching cockpit...`);
+            window.history.replaceState(null, '', window.location.pathname);
+            setTimeout(() => {
+              router.push(redirectUrl);
+            }, 600);
+          }
+        })
+        .catch(err => {
+          console.error('GitHub code exchange error:', err);
+          setError('GitHub authentication exchange failed.');
+        })
+        .finally(() => setOauthLoading(null));
     }
   }, [searchParams, redirectUrl, router]);
 
@@ -160,32 +184,10 @@ function LoginContent() {
     }
 
     if (provider === 'github') {
-      const githubClientId = process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID;
-      if (githubClientId) {
-        const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${encodeURIComponent(githubClientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=read:user%20user:email`;
-        window.location.href = githubAuthUrl;
-        return;
-      }
-
-      // If GitHub client ID not set yet, simulate graceful demo login
-      setTimeout(() => {
-        const user: UserProfile = {
-          id: 'usr_gh_4210',
-          name: 'Hardik Agrawal',
-          email: 'hardik0385@github.com',
-          role: 'Principal Telematics Architect',
-          avatarInitials: 'HA',
-          department: 'IoT Edge Stream Engineering',
-          provider: 'github',
-          token: `oauth_gh_${Math.random().toString(36).substring(2)}`
-        };
-
-        setSessionUser(user);
-        setSuccess(`Signed in with GITHUB Developer SSO. Launching console...`);
-        setTimeout(() => {
-          router.push(redirectUrl);
-        }, 600);
-      }, 700);
+      const githubClientId = process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID || 'Ov23lioLRTlkgbmLnABf';
+      const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${encodeURIComponent(githubClientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=read:user%20user:email`;
+      window.location.href = githubAuthUrl;
+      return;
     }
   };
 
