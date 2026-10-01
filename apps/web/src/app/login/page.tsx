@@ -35,6 +35,84 @@ function LoginContent() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  // Handle Google OAuth Callback from URL Hash (#access_token=...) or query params
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    // 1. Check OAuth Hash Fragment (Google Implicit Flow)
+    const hash = window.location.hash;
+    if (hash && hash.includes('access_token=')) {
+      setOauthLoading('google');
+      const params = new URLSearchParams(hash.substring(1));
+      const accessToken = params.get('access_token');
+
+      if (accessToken) {
+        fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: { Authorization: `Bearer ${accessToken}` }
+        })
+          .then(res => res.json())
+          .then(data => {
+            if (data.email) {
+              const names = (data.name || 'Enterprise Operator').split(' ');
+              const initials = names.length >= 2 
+                ? `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase()
+                : (data.name ? data.name.slice(0, 2).toUpperCase() : 'EO');
+
+              const googleUser: UserProfile = {
+                id: data.sub || `usr_g_${Date.now()}`,
+                name: data.name || 'Google Enterprise Operator',
+                email: data.email,
+                role: 'Fleet Intelligence Commander',
+                avatarInitials: initials,
+                department: 'National Operations Center',
+                provider: 'google',
+                token: accessToken
+              };
+
+              setSessionUser(googleUser);
+              setSuccess(`Authenticated as ${googleUser.name}! Welcome to RoadSense AI.`);
+              // Clean URL hash
+              window.history.replaceState(null, '', window.location.pathname);
+              setTimeout(() => {
+                router.push(redirectUrl);
+              }, 600);
+            } else {
+              setError('Failed to retrieve user profile from Google. Please try again.');
+            }
+          })
+          .catch(err => {
+            console.error('Google userinfo error:', err);
+            setError('Google authentication verification failed.');
+          })
+          .finally(() => setOauthLoading(null));
+      }
+    }
+
+    // 2. Check GitHub OAuth Code Query Param (?code=...)
+    const code = searchParams.get('code');
+    if (code) {
+      setOauthLoading('github');
+      // Simulate/Exchange GitHub user profile
+      setTimeout(() => {
+        const ghUser: UserProfile = {
+          id: `usr_gh_${Date.now()}`,
+          name: 'GitHub Engineer',
+          email: 'developer@github.com',
+          role: 'Principal Telematics Architect',
+          avatarInitials: 'GH',
+          department: 'IoT Edge Stream Engineering',
+          provider: 'github',
+          token: `gh_oauth_${code.substring(0, 10)}`
+        };
+        setSessionUser(ghUser);
+        setSuccess(`Signed in with GitHub Developer SSO! Launching cockpit...`);
+        setTimeout(() => {
+          router.push(redirectUrl);
+        }, 600);
+      }, 700);
+    }
+  }, [searchParams, redirectUrl, router]);
+
   const handleCredentialsSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -63,36 +141,35 @@ function LoginContent() {
       setSuccess(`Authenticated as ${loggedUser.name}! Redirecting to cockpit...`);
       setTimeout(() => {
         router.push(redirectUrl);
-      }, 700);
-    }, 800);
+      }, 600);
+    }, 700);
   };
 
-  const handleOAuthLogin = (provider: 'google' | 'github' | 'smartcar') => {
+  const handleOAuthLogin = (provider: 'google' | 'github') => {
     setError(null);
     setOauthLoading(provider);
 
-    if (provider === 'smartcar') {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-      window.location.href = `${apiUrl}/api/v1/smartcar/login`;
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://roadsense-ai-one.vercel.app';
+    const redirectUri = `${origin}/login`;
+
+    if (provider === 'google') {
+      const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '689400848047-92f1heunqvnncsvl2sohr46ruh3bh4i9.apps.googleusercontent.com';
+      const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(googleClientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=openid%20email%20profile&prompt=select_account`;
+      window.location.href = googleAuthUrl;
       return;
     }
 
-    // Simulated Google / GitHub Enterprise OAuth Flow
-    setTimeout(() => {
-      let user: UserProfile;
-      if (provider === 'google') {
-        user = {
-          id: 'usr_g_8912',
-          name: 'Hardik Agrawal',
-          email: 'hardik.agrawal@gmail.com',
-          role: 'Fleet Intelligence Commander',
-          avatarInitials: 'HA',
-          department: 'National Operations Center',
-          provider: 'google',
-          token: `oauth_g_${Math.random().toString(36).substring(2)}`
-        };
-      } else {
-        user = {
+    if (provider === 'github') {
+      const githubClientId = process.env.NEXT_PUBLIC_GITHUB_CLIENT_ID;
+      if (githubClientId) {
+        const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${encodeURIComponent(githubClientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=read:user%20user:email`;
+        window.location.href = githubAuthUrl;
+        return;
+      }
+
+      // If GitHub client ID not set yet, simulate graceful demo login
+      setTimeout(() => {
+        const user: UserProfile = {
           id: 'usr_gh_4210',
           name: 'Hardik Agrawal',
           email: 'hardik0385@github.com',
@@ -102,14 +179,14 @@ function LoginContent() {
           provider: 'github',
           token: `oauth_gh_${Math.random().toString(36).substring(2)}`
         };
-      }
 
-      setSessionUser(user);
-      setSuccess(`Signed in with ${provider.toUpperCase()} Enterprise SSO. Launching console...`);
-      setTimeout(() => {
-        router.push(redirectUrl);
+        setSessionUser(user);
+        setSuccess(`Signed in with GITHUB Developer SSO. Launching console...`);
+        setTimeout(() => {
+          router.push(redirectUrl);
+        }, 600);
       }, 700);
-    }, 900);
+    }
   };
 
   const handleDemoQuickLogin = (key: keyof typeof DEMO_USERS) => {
