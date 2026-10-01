@@ -4,11 +4,12 @@ export interface UserProfile {
   id: string;
   name: string;
   email: string;
-  role: string;
+  role: string; // The Operational Post / Designation (e.g., Fleet Lead, NHAI Dispatcher)
   avatarInitials: string;
   department: string;
   provider: 'credentials' | 'google' | 'github' | 'smartcar';
   token?: string;
+  avatarUrl?: string;
 }
 
 export const DEMO_USERS: Record<string, UserProfile> = {
@@ -66,6 +67,29 @@ export function setSessionUser(user: UserProfile): void {
   }
 }
 
+export function updateSessionUser(updates: Partial<UserProfile>): UserProfile | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const current = getSessionUser() || DEMO_USERS.fleet_lead;
+    const names = (updates.name || current.name || 'User').trim().split(' ');
+    const initials = names.length >= 2
+      ? `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase()
+      : (names[0] ? names[0].slice(0, 2).toUpperCase() : 'OP');
+
+    const updated: UserProfile = {
+      ...current,
+      ...updates,
+      avatarInitials: initials
+    };
+    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(updated));
+    window.dispatchEvent(new Event('roadsense_auth_changed'));
+    return updated;
+  } catch (e) {
+    console.error('Failed to update session user', e);
+    return null;
+  }
+}
+
 export function clearSessionUser(): void {
   if (typeof window === 'undefined') return;
   try {
@@ -75,3 +99,4 @@ export function clearSessionUser(): void {
     console.error('Failed to clear session user', e);
   }
 }
+

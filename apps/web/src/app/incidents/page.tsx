@@ -28,6 +28,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { TrafficIncident, getLiveIncidents } from '@/utils/trafficApi';
+import { addDispatchNotification } from '@/utils/notifications';
 
 const CITIES = [
   'All Cities',
@@ -66,6 +67,7 @@ function IncidentsContent() {
 
   // Interactive state: dispatched incidents
   const [dispatchedIncidents, setDispatchedIncidents] = useState<Record<string, { unit: string; time: string }>>({});
+  const [dispatchToast, setDispatchToast] = useState<{ unitId: string; roadName: string } | null>(null);
   
   // Inspect Modal
   const [inspectedIncident, setInspectedIncident] = useState<TrafficIncident | null>(null);
@@ -126,6 +128,21 @@ function IncidentsContent() {
       ...prev,
       [inc.id]: { unit: unitId, time: 'Just now' }
     }));
+
+    // Trigger global notification bell update
+    addDispatchNotification({
+      incidentId: inc.id,
+      roadName: inc.roadName,
+      city: inc.city,
+      unitId: unitId,
+      type: inc.type
+    });
+
+    // Show instant toast feedback
+    setDispatchToast({ unitId, roadName: inc.roadName });
+    setTimeout(() => {
+      setDispatchToast(null);
+    }, 4500);
   };
 
   const handleCloseModal = () => {
@@ -680,6 +697,30 @@ function IncidentsContent() {
           </div>
         </div>,
         document.body
+      )}
+
+      {/* Floating Live Dispatch Alert */}
+      {dispatchToast && (
+        <div className="fixed bottom-6 right-6 z-[10005] bg-slate-900 text-white px-5 py-3.5 rounded-2xl border border-emerald-500/40 shadow-2xl shadow-black/60 flex items-center gap-3.5 animate-in slide-in-from-bottom-5 duration-300">
+          <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shrink-0 animate-pulse">
+            <Siren size={20} />
+          </div>
+          <div>
+            <div className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
+              <span>🚨 Unit Dispatched: {dispatchToast.unitId}</span>
+              <span className="text-[9px] bg-emerald-950 text-emerald-400 px-1.5 py-0.2 rounded border border-emerald-500/30">ACTIVE</span>
+            </div>
+            <p className="text-[11px] text-slate-300 mt-0.5 max-w-xs truncate">
+              En route to {dispatchToast.roadName}. Live notification dispatched to top bar.
+            </p>
+          </div>
+          <button 
+            onClick={() => setDispatchToast(null)}
+            className="text-slate-400 hover:text-white p-1 ml-1"
+          >
+            <X size={14} />
+          </button>
+        </div>
       )}
     </div>
   );

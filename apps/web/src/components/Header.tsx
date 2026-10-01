@@ -24,11 +24,19 @@ import {
   LogOut,
   User,
   ShieldCheck,
-  LogIn
+  LogIn,
+  CheckCircle2
 } from 'lucide-react';
 import Link from 'next/link';
 import { getLiveIncidents, TrafficIncident } from '@/utils/trafficApi';
-import { getSessionUser, clearSessionUser, UserProfile } from '@/utils/auth';
+import { getSessionUser, updateSessionUser, clearSessionUser, UserProfile } from '@/utils/auth';
+import { 
+  getNotifications, 
+  markAsRead, 
+  markAllAsRead, 
+  clearAllNotifications, 
+  RoadSenseNotification 
+} from '@/utils/notifications';
 
 const CITIES = [
   'Delhi', 'Mumbai', 'Bangalore', 'Chennai', 
@@ -50,6 +58,17 @@ export default function Header() {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
+  // Notification Center States
+  const [notifications, setNotifications] = useState<RoadSenseNotification[]>([]);
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const notifMenuRef = useRef<HTMLDivElement>(null);
+
+  // Profile Editor Modal States
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editRole, setEditRole] = useState('');
+  const [editDept, setEditDept] = useState('');
+
   const [searchQuery, setSearchQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [vehicles, setVehicles] = useState<any[]>([]);
@@ -58,23 +77,62 @@ export default function Header() {
 
   useEffect(() => {
     setCurrentUser(getSessionUser());
+    setNotifications(getNotifications());
+
     const handleAuthChange = () => {
       setCurrentUser(getSessionUser());
     };
+
+    const handleNotifsChange = () => {
+      setNotifications(getNotifications());
+    };
+
     window.addEventListener('roadsense_auth_changed', handleAuthChange);
-    return () => window.removeEventListener('roadsense_auth_changed', handleAuthChange);
+    window.addEventListener('roadsense_notifications_updated', handleNotifsChange);
+
+    return () => {
+      window.removeEventListener('roadsense_auth_changed', handleAuthChange);
+      window.removeEventListener('roadsense_notifications_updated', handleNotifsChange);
+    };
   }, []);
 
-  // Close user dropdown on outside click
+  // Close dropdowns on outside click
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
       if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
         setIsUserMenuOpen(false);
       }
+      if (notifMenuRef.current && !notifMenuRef.current.contains(e.target as Node)) {
+        setIsNotifOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleOutsideClick);
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, []);
+
+  const handleOpenEditProfile = () => {
+    if (currentUser) {
+      setEditName(currentUser.name || '');
+      setEditRole(currentUser.role || 'Fleet Operations Lead');
+      setEditDept(currentUser.department || 'National Command Center');
+    }
+    setIsUserMenuOpen(false);
+    setIsEditProfileOpen(true);
+  };
+
+  const handleSaveProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editName.trim()) return;
+    const updated = updateSessionUser({
+      name: editName.trim(),
+      role: editRole.trim() || 'Operations Officer',
+      department: editDept.trim() || 'Indian Corridor Logistics'
+    });
+    if (updated) {
+      setCurrentUser(updated);
+    }
+    setIsEditProfileOpen(false);
+  };
 
   const handleLogout = () => {
     clearSessionUser();
@@ -401,11 +459,122 @@ export default function Header() {
 
       {/* Right Header Badges & Auth Profile */}
       <div className="flex items-center space-x-3.5">
-        <button className="p-2 relative text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors">
-          <Bell size={18} />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full animate-pulse"></span>
-        </button>
+        
+        {/* Notification Bell Dropdown */}
+        <div className="relative" ref={notifMenuRef}>
+          <button 
+            onClick={() => setIsNotifOpen(!isNotifOpen)}
+            className="p-2 relative text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+            title="Operations & Dispatch Alerts"
+          >
+            <Bell size={18} />
+            {notifications.filter(n => !n.read).length > 0 && (
+              <span className="absolute top-1 right-1 flex items-center justify-center min-w-4 h-4 px-1 bg-rose-500 text-white font-bold text-[9px] rounded-full ring-2 ring-white animate-pulse">
+                {notifications.filter(n => !n.read).length}
+              </span>
+            )}
+          </button>
 
+          {/* Notifications Dropdown Panel */}
+          {isNotifOpen && (
+            <div className="absolute right-0 mt-3 w-80 sm:w-96 bg-white border border-slate-200/90 rounded-2xl shadow-2xl shadow-slate-300/60 p-3 z-[10003] animate-in fade-in zoom-in-95 duration-150">
+              <div className="flex items-center justify-between pb-2.5 mb-2 border-b border-slate-100 px-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-slate-900">Operations & Unit Dispatches</span>
+                  {notifications.filter(n => !n.read).length > 0 && (
+                    <span className="text-[10px] font-extrabold px-1.5 py-0.5 bg-rose-100 text-rose-700 rounded-full">
+                      {notifications.filter(n => !n.read).length} new
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 text-[11px]">
+                  <button 
+                    onClick={() => markAllAsRead()}
+                    className="text-emerald-600 hover:text-emerald-700 hover:underline font-semibold"
+                  >
+                    Mark read
+                  </button>
+                  <span className="text-slate-300">•</span>
+                  <button 
+                    onClick={() => clearAllNotifications()}
+                    className="text-slate-400 hover:text-slate-600 hover:underline"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+
+              {/* Notification List */}
+              <div className="max-h-80 overflow-y-auto space-y-2 pr-0.5">
+                {notifications.length === 0 ? (
+                  <div className="py-8 text-center text-xs text-slate-400">
+                    <CheckCircle2 size={24} className="mx-auto text-emerald-500/70 mb-2" />
+                    All operational corridors clear. No pending unit alerts.
+                  </div>
+                ) : (
+                  notifications.map((notif) => (
+                    <div
+                      key={notif.id}
+                      onClick={() => {
+                        markAsRead(notif.id);
+                        if (notif.incidentId) {
+                          setIsNotifOpen(false);
+                          router.push(`/incidents?inspect=${encodeURIComponent(notif.incidentId)}`);
+                        }
+                      }}
+                      className={`p-2.5 rounded-xl border transition-all cursor-pointer ${
+                        notif.read 
+                          ? 'bg-slate-50/70 border-slate-100 text-slate-600 hover:bg-slate-100/80' 
+                          : 'bg-emerald-50/40 border-emerald-200/80 text-slate-800 hover:bg-emerald-50 shadow-xs'
+                      }`}
+                    >
+                      <div className="flex items-start gap-2.5">
+                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
+                          notif.type === 'dispatch' 
+                            ? 'bg-emerald-100 text-emerald-700' 
+                            : 'bg-amber-100 text-amber-700'
+                        }`}>
+                          {notif.type === 'dispatch' ? <Siren size={15} /> : <AlertTriangle size={15} />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-1">
+                            <p className="text-xs font-bold text-slate-900 truncate">{notif.title}</p>
+                            <span className="text-[10px] text-slate-400 shrink-0 font-medium">{notif.timestamp}</span>
+                          </div>
+                          <p className="text-[11px] text-slate-600 mt-0.5 leading-snug line-clamp-2">
+                            {notif.message}
+                          </p>
+                          {notif.city && (
+                            <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-slate-500">
+                              <MapPin size={11} className="text-rose-500 shrink-0" />
+                              <span className="font-semibold text-slate-700">{notif.city}</span>
+                              {notif.roadName && <span className="text-slate-400">· {notif.roadName}</span>}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Notification Footer */}
+              <div className="pt-2 mt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 px-1">
+                <Link 
+                  href="/incidents" 
+                  onClick={() => setIsNotifOpen(false)}
+                  className="text-slate-800 font-bold hover:text-emerald-600 flex items-center gap-1"
+                >
+                  <span>Open Incident Dispatch Console</span>
+                  <ArrowRight size={12} />
+                </Link>
+                <span className="text-[10px] text-emerald-600 font-mono">LIVE SYNC</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* User Profile Right Corner */}
         {currentUser ? (
           <div className="relative" ref={userMenuRef}>
             <button
@@ -417,11 +586,11 @@ export default function Header() {
               </div>
               <div className="hidden sm:block text-left text-xs">
                 <div className="font-semibold text-slate-800 group-hover:text-slate-900">{currentUser.name}</div>
-                <div className="text-[10px] text-slate-400">{currentUser.role}</div>
+                <div className="text-[10px] text-emerald-600 font-medium">{currentUser.role}</div>
               </div>
             </button>
 
-            {/* Dropdown Menu */}
+            {/* User Dropdown Menu */}
             {isUserMenuOpen && (
               <div className="absolute right-0 mt-3 w-64 bg-white border border-slate-200/90 rounded-2xl shadow-xl shadow-slate-200/50 p-2 z-[10002] animate-in fade-in zoom-in-95 duration-150">
                 <div className="p-3 bg-slate-50 rounded-xl mb-1.5 border border-slate-100">
@@ -431,8 +600,19 @@ export default function Header() {
                     <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200/80 uppercase tracking-wider">
                       {currentUser.role}
                     </span>
+                    <span className="text-[9px] text-slate-400">
+                      via {currentUser.provider.toUpperCase()}
+                    </span>
                   </div>
                 </div>
+
+                <button
+                  onClick={handleOpenEditProfile}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-800 hover:bg-slate-100 rounded-lg transition-colors text-left"
+                >
+                  <ShieldCheck size={14} className="text-emerald-500" />
+                  <span>Edit Name & Operational Post</span>
+                </button>
 
                 <Link
                   href="/login"
@@ -440,7 +620,7 @@ export default function Header() {
                   className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
                 >
                   <User size={14} className="text-slate-500" />
-                  <span>Switch Account / Re-authenticate</span>
+                  <span>Switch Account / Sign In</span>
                 </Link>
 
                 <button
@@ -463,6 +643,102 @@ export default function Header() {
           </Link>
         )}
       </div>
+
+      {/* Edit Profile & Post Modal */}
+      {isEditProfileOpen && (
+        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 z-[10006] animate-in fade-in duration-200">
+          <div className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                  <User size={16} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">Edit Operator Profile & Post</h3>
+                  <p className="text-[11px] text-slate-400">Displayed in top right console header</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsEditProfileOpen(false)}
+                className="text-slate-400 hover:text-slate-600 p-1"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveProfile} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Full Display Name
+                </label>
+                <input
+                  type="text"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  placeholder="Hardik Agrawal"
+                  required
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-emerald-500 font-medium"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Operational Post / Designation
+                </label>
+                <input
+                  type="text"
+                  value={editRole}
+                  onChange={(e) => setEditRole(e.target.value)}
+                  placeholder="Fleet Operations Lead / NHAI Dispatcher"
+                  required
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-emerald-500 font-medium"
+                />
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {['Fleet Operations Lead', 'NHAI Incident Dispatcher', 'IoT Telematics Lead', 'Highway Patrol Commander'].map((role) => (
+                    <button
+                      key={role}
+                      type="button"
+                      onClick={() => setEditRole(role)}
+                      className="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 border border-slate-200 transition-colors text-slate-600"
+                    >
+                      + {role}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Department / Organization
+                </label>
+                <input
+                  type="text"
+                  value={editDept}
+                  onChange={(e) => setEditDept(e.target.value)}
+                  placeholder="National Operations Center"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-emerald-500 font-medium"
+                />
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsEditProfileOpen(false)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-500/20"
+                >
+                  Save & Update Header
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

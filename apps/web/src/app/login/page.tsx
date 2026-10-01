@@ -35,6 +35,12 @@ function LoginContent() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  // Onboarding profile state for new Google/GitHub logins
+  const [onboardingUser, setOnboardingUser] = useState<UserProfile | null>(null);
+  const [customName, setCustomName] = useState('');
+  const [customRole, setCustomRole] = useState('Fleet Operations Lead');
+  const [customDept, setCustomDept] = useState('National Operations Center');
+
   // Handle Google OAuth Callback from URL Hash (#access_token=...) or query params
   React.useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -69,13 +75,15 @@ function LoginContent() {
                 token: accessToken
               };
 
-              setSessionUser(googleUser);
-              setSuccess(`Authenticated as ${googleUser.name}! Welcome to RoadSense AI.`);
               // Clean URL hash
               window.history.replaceState(null, '', window.location.pathname);
-              setTimeout(() => {
-                router.push(redirectUrl);
-              }, 600);
+              
+              // Prompt for Name and Post confirmation
+              setCustomName(googleUser.name);
+              setCustomRole(googleUser.role);
+              setCustomDept(googleUser.department);
+              setOnboardingUser(googleUser);
+              setSuccess(`Connected with Google (${googleUser.email}). Please confirm your name & post.`);
             } else {
               setError('Failed to retrieve user profile from Google. Please try again.');
             }
@@ -101,16 +109,14 @@ function LoginContent() {
         .then(res => res.json())
         .then(data => {
           if (data.success && data.user) {
-            setSessionUser(data.user);
-            setSuccess(`Authenticated as ${data.user.name} via GitHub! Launching cockpit...`);
-            // Clean URL query params
             window.history.replaceState(null, '', window.location.pathname);
-            setTimeout(() => {
-              router.push(redirectUrl);
-            }, 600);
+            setCustomName(data.user.name);
+            setCustomRole(data.user.role || 'Principal Telematics Architect');
+            setCustomDept(data.user.department || 'IoT Edge Stream Engineering');
+            setOnboardingUser(data.user);
+            setSuccess(`Connected with GitHub (${data.user.email}). Please confirm your name & post.`);
           } else {
             console.warn('GitHub exchange fallback:', data.error);
-            // Fallback for graceful demo
             const fallbackUser: UserProfile = {
               id: `usr_gh_${Date.now()}`,
               name: 'Hardik0385 (GitHub)',
@@ -121,12 +127,11 @@ function LoginContent() {
               provider: 'github',
               token: `gh_token_${code.substring(0, 10)}`
             };
-            setSessionUser(fallbackUser);
-            setSuccess(`Signed in with GitHub Developer SSO! Launching cockpit...`);
             window.history.replaceState(null, '', window.location.pathname);
-            setTimeout(() => {
-              router.push(redirectUrl);
-            }, 600);
+            setCustomName(fallbackUser.name);
+            setCustomRole(fallbackUser.role);
+            setCustomDept(fallbackUser.department);
+            setOnboardingUser(fallbackUser);
           }
         })
         .catch(err => {
@@ -135,7 +140,31 @@ function LoginContent() {
         })
         .finally(() => setOauthLoading(null));
     }
-  }, [searchParams, redirectUrl, router]);
+  }, [searchParams, router]);
+
+  const handleConfirmOnboarding = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!onboardingUser) return;
+
+    const names = (customName.trim() || onboardingUser.name).split(' ');
+    const initials = names.length >= 2
+      ? `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase()
+      : (names[0] ? names[0].slice(0, 2).toUpperCase() : 'OP');
+
+    const finalizedUser: UserProfile = {
+      ...onboardingUser,
+      name: customName.trim() || onboardingUser.name,
+      role: customRole.trim() || 'Operations Officer',
+      department: customDept.trim() || 'Indian Corridor Logistics',
+      avatarInitials: initials
+    };
+
+    setSessionUser(finalizedUser);
+    setSuccess(`Welcome, ${finalizedUser.name} (${finalizedUser.role})! Launching console...`);
+    setTimeout(() => {
+      router.push(redirectUrl);
+    }, 600);
+  };
 
   const handleCredentialsSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -248,120 +277,201 @@ function LoginContent() {
             </div>
           )}
 
-          {/* OAuth Buttons Section */}
-          <div className="space-y-2.5 mb-4">
-            {/* Google OAuth */}
-            <button
-              type="button"
-              onClick={() => handleOAuthLogin('google')}
-              disabled={!!oauthLoading || loading}
-              className="w-full py-2.5 sm:py-3 px-4 bg-slate-800 hover:bg-slate-700/90 border border-slate-700 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-semibold text-white flex items-center justify-center gap-2.5 transition-all hover:border-slate-500 active:scale-[0.99] disabled:opacity-60 shadow-md shadow-slate-950/40"
-            >
-              {oauthLoading === 'google' ? (
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-              ) : (
-                <svg className="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24">
-                  <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.4 9 5 12 5z"/>
-                  <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.6h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.9z"/>
-                  <path fill="#FBBC05" d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3s.2-1.6.4-2.3L1.9 7.3C.7 9.7 0 12.3 0 15.2s.7 5.5 1.9 7.9l3.7-2.9z"/>
-                  <path fill="#34A853" d="M12 23.5c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2-6.4-4.8L1.9 16.9C3.7 20.6 7.5 23.5 12 23.5z"/>
-                </svg>
-              )}
-              <span>Login with Google</span>
-            </button>
-
-            {/* GitHub OAuth */}
-            <button
-              type="button"
-              onClick={() => handleOAuthLogin('github')}
-              disabled={!!oauthLoading || loading}
-              className="w-full py-2.5 sm:py-3 px-4 bg-slate-800 hover:bg-slate-700/90 border border-slate-700 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-semibold text-white flex items-center justify-center gap-2.5 transition-all hover:border-slate-500 active:scale-[0.99] disabled:opacity-60 shadow-md shadow-slate-950/40"
-            >
-              {oauthLoading === 'github' ? (
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-              ) : (
-                <svg className="w-4 h-4 sm:w-5 sm:h-5 fill-white" viewBox="0 0 24 24">
-                  <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
-                </svg>
-              )}
-              <span>Login with GitHub</span>
-            </button>
-          </div>
-
-          {/* Divider */}
-          <div className="relative flex items-center justify-center my-3.5">
-            <div className="border-t border-slate-800 w-full"></div>
-            <span className="bg-slate-900 px-3 text-[10px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
-              Or Sign In with Corporate Email
-            </span>
-            <div className="border-t border-slate-800 w-full"></div>
-          </div>
-
-          {/* Credentials Form */}
-          <form onSubmit={handleCredentialsSubmit} className="space-y-3">
-            <div>
-              <label className="block text-[11px] font-semibold text-slate-300 mb-1 uppercase tracking-wider">
-                Corporate Email Address
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
-                  <Mail size={15} />
+          {onboardingUser ? (
+            /* Onboarding Profile Confirmation View */
+            <div className="animate-in fade-in zoom-in-95 duration-200">
+              <div className="mb-3.5 text-center">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-950/90 border border-emerald-500/40 text-[11px] text-emerald-300 font-semibold mb-1.5">
+                  <Sparkles size={13} className="text-emerald-400" />
+                  <span>{onboardingUser.provider === 'google' ? 'Google SSO Connected' : 'GitHub SSO Connected'}</span>
                 </div>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="operator@roadsense.ai"
-                  className="w-full pl-9 pr-3.5 py-2.5 bg-slate-950/80 border border-slate-800 rounded-xl sm:rounded-2xl text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors font-medium"
-                />
+                <h2 className="text-base sm:text-lg font-bold text-white">Confirm Your Operator Profile</h2>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Set your Name & Post to be displayed at the right corner of the console header
+                </p>
               </div>
+
+              <form onSubmit={handleConfirmOnboarding} className="space-y-3">
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-300 mb-1 uppercase tracking-wider">
+                    Full Display Name
+                  </label>
+                  <input
+                    type="text"
+                    value={customName}
+                    onChange={(e) => setCustomName(e.target.value)}
+                    required
+                    placeholder="Hardik Agrawal"
+                    className="w-full px-3.5 py-2.5 bg-slate-950/90 border border-slate-800 rounded-xl text-xs sm:text-sm text-white focus:outline-none focus:border-emerald-500 font-medium"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-300 mb-1 uppercase tracking-wider">
+                    Operational Post / Designation
+                  </label>
+                  <input
+                    type="text"
+                    value={customRole}
+                    onChange={(e) => setCustomRole(e.target.value)}
+                    required
+                    placeholder="Fleet Operations Lead / NHAI Dispatcher"
+                    className="w-full px-3.5 py-2.5 bg-slate-950/90 border border-slate-800 rounded-xl text-xs sm:text-sm text-white focus:outline-none focus:border-emerald-500 font-medium"
+                  />
+                  <div className="mt-1.5 flex flex-wrap gap-1">
+                    {['Fleet Operations Lead', 'NHAI Incident Dispatcher', 'IoT Telematics Lead', 'Highway Patrol Commander'].map((role) => (
+                      <button
+                        key={role}
+                        type="button"
+                        onClick={() => setCustomRole(role)}
+                        className="text-[10px] px-2 py-0.5 rounded-md bg-slate-800 hover:bg-emerald-950 hover:text-emerald-300 border border-slate-700/80 transition-colors text-slate-300"
+                      >
+                        + {role}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-300 mb-1 uppercase tracking-wider">
+                    Department / Division
+                  </label>
+                  <input
+                    type="text"
+                    value={customDept}
+                    onChange={(e) => setCustomDept(e.target.value)}
+                    placeholder="National Operations Center"
+                    className="w-full px-3.5 py-2.5 bg-slate-950/90 border border-slate-800 rounded-xl text-xs sm:text-sm text-white focus:outline-none focus:border-emerald-500 font-medium"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full py-2.5 sm:py-3 mt-1 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl sm:rounded-2xl text-xs sm:text-sm transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 active:scale-[0.99]"
+                >
+                  <span>Confirm & Enter Operations Cockpit</span>
+                  <ArrowRight size={15} />
+                </button>
+              </form>
             </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="block text-[11px] font-semibold text-slate-300 uppercase tracking-wider">
-                  Security Passcode
-                </label>
-                <span className="text-[10px] sm:text-[11px] text-emerald-400 hover:underline cursor-pointer">
-                  Forgot Code?
-                </span>
-              </div>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
-                  <Lock size={15} />
-                </div>
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••••••"
-                  className="w-full pl-9 pr-10 py-2.5 bg-slate-950/80 border border-slate-800 rounded-xl sm:rounded-2xl text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors font-mono"
-                />
+          ) : (
+            <>
+              {/* OAuth Buttons Section */}
+              <div className="space-y-2.5 mb-4">
+                {/* Google OAuth */}
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-300 transition-colors"
+                  onClick={() => handleOAuthLogin('google')}
+                  disabled={!!oauthLoading || loading}
+                  className="w-full py-2.5 sm:py-3 px-4 bg-slate-800 hover:bg-slate-700/90 border border-slate-700 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-semibold text-white flex items-center justify-center gap-2.5 transition-all hover:border-slate-500 active:scale-[0.99] disabled:opacity-60 shadow-md shadow-slate-950/40"
                 >
-                  {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                  {oauthLoading === 'google' ? (
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  ) : (
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24">
+                      <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.4 9 5 12 5z"/>
+                      <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.6h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.9z"/>
+                      <path fill="#FBBC05" d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3s.2-1.6.4-2.3L1.9 7.3C.7 9.7 0 12.3 0 15.2s.7 5.5 1.9 7.9l3.7-2.9z"/>
+                      <path fill="#34A853" d="M12 23.5c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2-6.4-4.8L1.9 16.9C3.7 20.6 7.5 23.5 12 23.5z"/>
+                    </svg>
+                  )}
+                  <span>Login with Google</span>
+                </button>
+
+                {/* GitHub OAuth */}
+                <button
+                  type="button"
+                  onClick={() => handleOAuthLogin('github')}
+                  disabled={!!oauthLoading || loading}
+                  className="w-full py-2.5 sm:py-3 px-4 bg-slate-800 hover:bg-slate-700/90 border border-slate-700 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-semibold text-white flex items-center justify-center gap-2.5 transition-all hover:border-slate-500 active:scale-[0.99] disabled:opacity-60 shadow-md shadow-slate-950/40"
+                >
+                  {oauthLoading === 'github' ? (
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  ) : (
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5 fill-white" viewBox="0 0 24 24">
+                      <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
+                    </svg>
+                  )}
+                  <span>Login with GitHub</span>
                 </button>
               </div>
-            </div>
 
-            <button
-              type="submit"
-              disabled={loading || !!oauthLoading}
-              className="w-full py-2.5 sm:py-3 mt-1 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl sm:rounded-2xl text-xs sm:text-sm transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 active:scale-[0.99] disabled:opacity-60"
-            >
-              {loading ? (
-                <div className="w-4 h-4 border-2 border-slate-950/30 border-t-slate-950 rounded-full animate-spin"></div>
-              ) : (
-                <>
-                  <span>Sign In to Cockpit</span>
-                  <ArrowRight size={15} />
-                </>
-              )}
-            </button>
-          </form>
+              {/* Divider */}
+              <div className="relative flex items-center justify-center my-3.5">
+                <div className="border-t border-slate-800 w-full"></div>
+                <span className="bg-slate-900 px-3 text-[10px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
+                  Or Sign In with Corporate Email
+                </span>
+                <div className="border-t border-slate-800 w-full"></div>
+              </div>
+
+              {/* Credentials Form */}
+              <form onSubmit={handleCredentialsSubmit} className="space-y-3">
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-300 mb-1 uppercase tracking-wider">
+                    Corporate Email Address
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                      <Mail size={15} />
+                    </div>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="operator@roadsense.ai"
+                      className="w-full pl-9 pr-3.5 py-2.5 bg-slate-950/80 border border-slate-800 rounded-xl sm:rounded-2xl text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors font-medium"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-[11px] font-semibold text-slate-300 uppercase tracking-wider">
+                      Security Passcode
+                    </label>
+                    <span className="text-[10px] sm:text-[11px] text-emerald-400 hover:underline cursor-pointer">
+                      Forgot Code?
+                    </span>
+                  </div>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                      <Lock size={15} />
+                    </div>
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••••••"
+                      className="w-full pl-9 pr-10 py-2.5 bg-slate-950/80 border border-slate-800 rounded-xl sm:rounded-2xl text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors font-mono"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-300 transition-colors"
+                    >
+                      {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                    </button>
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading || !!oauthLoading}
+                  className="w-full py-2.5 sm:py-3 mt-1 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl sm:rounded-2xl text-xs sm:text-sm transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 active:scale-[0.99] disabled:opacity-60"
+                >
+                  {loading ? (
+                    <div className="w-4 h-4 border-2 border-slate-950/30 border-t-slate-950 rounded-full animate-spin"></div>
+                  ) : (
+                    <>
+                      <span>Sign In to Cockpit</span>
+                      <ArrowRight size={15} />
+                    </>
+                  )}
+                </button>
+              </form>
+            </>
+          )}
 
           {/* Quick Demo Logins Section */}
           <div className="mt-4 sm:mt-5 pt-3.5 border-t border-slate-800/80">
