@@ -19,7 +19,8 @@ import {
   Thermometer,
   Activity,
   Globe2,
-  Route
+  Route,
+  ChevronDown
 } from 'lucide-react';
 import { 
   AreaChart, 
@@ -33,22 +34,22 @@ import {
 import { getLiveIncidents, TrafficIncident } from '@/utils/trafficApi';
 
 const INDIAN_CITIES = [
-  { name: 'Delhi', region: 'North', code: 'DEL' },
-  { name: 'Mumbai', region: 'West', code: 'BOM' },
-  { name: 'Bangalore', region: 'South', code: 'BLR' },
-  { name: 'Chennai', region: 'South', code: 'MAA' },
-  { name: 'Hyderabad', region: 'South', code: 'HYD' },
-  { name: 'Pune', region: 'West', code: 'PNQ' },
-  { name: 'Kolkata', region: 'East', code: 'CCU' },
-  { name: 'Ahmedabad', region: 'West', code: 'AMD' },
-  { name: 'Surat', region: 'West', code: 'STV' },
-  { name: 'Jaipur', region: 'North', code: 'JAI' },
-  { name: 'Lucknow', region: 'North', code: 'LKO' },
-  { name: 'Kanpur', region: 'North', code: 'KNU' },
-  { name: 'Nagpur', region: 'Central', code: 'NAG' },
-  { name: 'Indore', region: 'Central', code: 'IDR' },
-  { name: 'Patna', region: 'East', code: 'PAT' },
-  { name: 'Bhopal', region: 'Central', code: 'BHO' }
+  { name: 'Delhi', region: 'North', code: 'DEL', query: 'New Delhi,IN' },
+  { name: 'Mumbai', region: 'West', code: 'BOM', query: 'Mumbai,IN' },
+  { name: 'Bangalore', region: 'South', code: 'BLR', query: 'Bengaluru,IN' },
+  { name: 'Chennai', region: 'South', code: 'MAA', query: 'Chennai,IN' },
+  { name: 'Hyderabad', region: 'South', code: 'HYD', query: 'Hyderabad,IN' },
+  { name: 'Pune', region: 'West', code: 'PNQ', query: 'Pune,IN' },
+  { name: 'Kolkata', region: 'East', code: 'CCU', query: 'Kolkata,IN' },
+  { name: 'Ahmedabad', region: 'West', code: 'AMD', query: 'Ahmedabad,IN' },
+  { name: 'Surat', region: 'West', code: 'STV', query: 'Surat,IN' },
+  { name: 'Jaipur', region: 'North', code: 'JAI', query: 'Jaipur,IN' },
+  { name: 'Lucknow', region: 'North', code: 'LKO', query: 'Lucknow,IN' },
+  { name: 'Kanpur', region: 'North', code: 'KNU', query: 'Kanpur,IN' },
+  { name: 'Nagpur', region: 'Central', code: 'NAG', query: 'Nagpur,IN' },
+  { name: 'Indore', region: 'Central', code: 'IDR', query: 'Indore,IN' },
+  { name: 'Patna', region: 'East', code: 'PAT', query: 'Patna,IN' },
+  { name: 'Bhopal', region: 'Central', code: 'BHO', query: 'Bhopal,IN' }
 ];
 
 export default function Dashboard() {
@@ -60,17 +61,19 @@ export default function Dashboard() {
   });
 
   const [connectionStatus, setConnectionStatus] = useState('LIVE');
+  const [selectedWeatherCity, setSelectedWeatherCity] = useState(INDIAN_CITIES[0]);
+  const [isCityDropdownOpen, setIsCityDropdownOpen] = useState(false);
   const [weatherData, setWeatherData] = useState<{temp: number, description: string, icon: string} | null>(null);
   const [liveIncidents, setLiveIncidents] = useState<TrafficIncident[]>([]);
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [chartData, setChartData] = useState<any[]>([]);
 
-  // Fetch live weather for India central hub
+  // Fetch live weather for selected city
   useEffect(() => {
-    fetch('https://api.openweathermap.org/data/2.5/weather?q=New Delhi,IN&units=metric&appid=c8e1db9abbb894f3157ae40bd12230a2')
+    fetch(`https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(selectedWeatherCity.query)}&units=metric&appid=c8e1db9abbb894f3157ae40bd12230a2`)
       .then(res => res.json())
       .then(data => {
-        if (data.main) {
+        if (data.main && data.weather && data.weather[0]) {
           setWeatherData({
             temp: Math.round(data.main.temp),
             description: data.weather[0].description,
@@ -78,8 +81,10 @@ export default function Dashboard() {
           });
         }
       })
-      .catch(() => {});
-  }, []);
+      .catch((err) => {
+        console.error('Failed to fetch city weather', err);
+      });
+  }, [selectedWeatherCity]);
 
   // Fetch live TomTom incidents & connected fleet
   useEffect(() => {
@@ -200,13 +205,72 @@ export default function Dashboard() {
           <p className="text-slate-500 text-sm">Real-time national telemetry ingestion, corridor bottlenecks, and predictive road stress across 16 Indian cities</p>
         </div>
         
-        <div className="flex items-center space-x-3 text-sm">
+        <div className="flex flex-wrap items-center gap-2.5 text-sm">
+          {/* City Weather Selector Dropdown */}
+          <div className="relative">
+            <button 
+              type="button"
+              onClick={() => setIsCityDropdownOpen(!isCityDropdownOpen)}
+              className="flex items-center space-x-2 bg-white border border-slate-200/90 rounded-xl px-3.5 py-2 shadow-xs hover:border-slate-300 hover:bg-slate-50/80 transition-all text-xs md:text-sm font-medium text-slate-800 cursor-pointer"
+            >
+              <MapPin size={14} className="text-indigo-600 shrink-0" />
+              <span>{selectedWeatherCity.name}</span>
+              <span className="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 border border-slate-200">
+                {selectedWeatherCity.code}
+              </span>
+              <ChevronDown size={14} className={`text-slate-400 transition-transform duration-200 ${isCityDropdownOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {isCityDropdownOpen && (
+              <>
+                <div 
+                  className="fixed inset-0 z-30" 
+                  onClick={() => setIsCityDropdownOpen(false)} 
+                />
+                <div className="absolute right-0 mt-2 w-64 max-h-72 overflow-y-auto bg-white/95 backdrop-blur-md border border-slate-200 rounded-2xl shadow-xl z-40 p-1.5 space-y-0.5">
+                  <div className="px-3 py-1.5 text-[11px] font-semibold tracking-wider text-slate-400 uppercase border-b border-slate-100 mb-1">
+                    Select Urban Corridor (16 Cities)
+                  </div>
+                  {INDIAN_CITIES.map((city) => {
+                    const isSelected = city.code === selectedWeatherCity.code;
+                    return (
+                      <button
+                        key={city.code}
+                        type="button"
+                        onClick={() => {
+                          setSelectedWeatherCity(city);
+                          setIsCityDropdownOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs text-left transition-colors cursor-pointer ${
+                          isSelected 
+                            ? 'bg-indigo-50 text-indigo-950 font-semibold border border-indigo-100' 
+                            : 'text-slate-700 hover:bg-slate-100/80'
+                        }`}
+                      >
+                        <div className="flex items-center space-x-2">
+                          <span className="font-medium">{city.name}</span>
+                          <span className="text-[10px] font-mono text-slate-400">({city.region})</span>
+                        </div>
+                        <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded border ${
+                          isSelected ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-slate-100 text-slate-500 border-slate-200'
+                        }`}>
+                          {city.code}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
+
           {weatherData && (
             <div className="flex items-center bg-white border border-slate-200/90 rounded-xl px-3.5 py-2 shadow-xs">
               <img src={`https://openweathermap.org/img/wn/${weatherData.icon}.png`} alt="weather icon" className="w-5 h-5 mr-2" />
               <span className="text-slate-800 font-medium">{weatherData.temp}°C, <span className="text-slate-500 capitalize">{weatherData.description}</span></span>
             </div>
           )}
+
           <div className="flex items-center space-x-2 bg-white border border-slate-200/90 px-3.5 py-2 rounded-xl shadow-xs">
             <span className={`w-2.5 h-2.5 rounded-full ${connectionStatus === 'LIVE' ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`}></span>
             <span className={connectionStatus === 'LIVE' ? 'text-emerald-700 font-medium' : 'text-rose-600 font-medium'}>
