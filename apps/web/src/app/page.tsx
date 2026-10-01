@@ -83,16 +83,19 @@ export default function Dashboard() {
 
   // Fetch live TomTom incidents & connected fleet
   useEffect(() => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:3001/api/v1/live';
+
     getLiveIncidents().then(data => setLiveIncidents(data)).catch(() => {});
     
-    fetch('http://localhost:3001/api/v1/vehicles')
+    fetch(`${apiUrl}/api/v1/vehicles`)
       .then(r => r.json())
       .then(d => d.data && setVehicles(d.data))
       .catch(() => {});
 
     // Periodic refresh every 8 seconds
     const interval = setInterval(() => {
-      fetch('http://localhost:3001/api/v1/vehicles')
+      fetch(`${apiUrl}/api/v1/vehicles`)
         .then(r => r.json())
         .then(d => d.data && setVehicles(d.data))
         .catch(() => {});
@@ -103,40 +106,46 @@ export default function Dashboard() {
 
   // Live WebSocket stream for real-time dashboard events
   useEffect(() => {
-    const ws = new WebSocket('ws://localhost:3001/api/v1/live');
+    const wsUrl = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:3001/api/v1/live';
+    let ws: WebSocket | null = null;
     
-    ws.onopen = () => setConnectionStatus('LIVE');
-    ws.onclose = () => setConnectionStatus('OFFLINE');
-    ws.onerror = () => setConnectionStatus('ERROR');
-    
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.type === 'FLEET_UPDATE') {
-          setFleetStatus({
-            eventsPerSecond: data.eventsPerSecond,
-            activeIncidents: data.activeIncidents,
-            processingLatencyMs: data.processingLatencyMs,
-            kafkaLag: data.kafkaLag
-          });
+    try {
+      ws = new WebSocket(wsUrl);
+      ws.onopen = () => setConnectionStatus('LIVE');
+      ws.onclose = () => setConnectionStatus('OFFLINE');
+      ws.onerror = () => setConnectionStatus('ERROR');
+      
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'FLEET_UPDATE') {
+            setFleetStatus({
+              eventsPerSecond: data.eventsPerSecond,
+              activeIncidents: data.activeIncidents,
+              processingLatencyMs: data.processingLatencyMs,
+              kafkaLag: data.kafkaLag
+            });
 
-          // Add real-time point to chart
-          setChartData(prev => {
-            const newPoint = {
-              time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-              eventsPerSec: Math.round(data.eventsPerSecond / 1000),
-              stress: Math.round(35 + Math.random() * 20)
-            };
-            const updated = [...prev, newPoint];
-            return updated.length > 20 ? updated.slice(updated.length - 20) : updated;
-          });
-        }
-      } catch (err) {
-        console.error('Failed to parse WS message', err);
-      }
+            // Add real-time point to chart
+            setChartData(prev => {
+              const newPoint = {
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+                eventsPerSec: Math.round(data.eventsPerSecond / 1000),
+                stress: Math.round(35 + Math.random() * 20)
+              };
+              const updated = [...prev, newPoint];
+              return updated.length > 20 ? updated.slice(updated.length - 20) : updated;
+            });
+          }
+        } catch (e) {}
+      };
+    } catch (e) {
+      setConnectionStatus('OFFLINE');
+    }
+
+    return () => {
+      if (ws) ws.close();
     };
-
-    return () => ws.close();
   }, []);
 
   // Initialize initial chart data

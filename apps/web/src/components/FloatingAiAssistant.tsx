@@ -85,7 +85,8 @@ export default function FloatingAiAssistant() {
         setTrafficContext(freshContext);
       }
 
-      const res = await fetch('http://localhost:3001/api/v1/ai/query', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const res = await fetch(`${apiUrl}/api/v1/ai/query`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

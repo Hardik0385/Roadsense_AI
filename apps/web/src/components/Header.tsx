@@ -49,8 +49,9 @@ export default function Header() {
   // Fetch live fleet and TomTom incidents for instant universal search
   const loadSearchCache = async () => {
     try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
       const [vehRes, incList] = await Promise.all([
-        fetch('http://localhost:3001/api/v1/vehicles').then(r => r.json()).catch(() => ({ data: [] })),
+        fetch(`${apiUrl}/api/v1/vehicles`).then(r => r.json()).catch(() => ({ data: [] })),
         getLiveIncidents().catch(() => [])
       ]);
       if (vehRes && Array.isArray(vehRes.data)) setVehicles(vehRes.data);
