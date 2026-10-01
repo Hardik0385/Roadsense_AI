@@ -461,54 +461,58 @@ GITHUB_CLIENT_SECRET=your_github_client_secret
 ### 14.1 Executive Fleet & Road Intelligence (Overview Dashboard)
 *High-velocity KPI summaries (Kafka events/sec, active road disruptions, average fleet stress), 16-city live weather dropdown selector, national corridor stress distribution, and live stream updates.*
 
-![Executive Overview Dashboard](docs/assets/01_overview_dashboard.png)
+<img width="1848" height="917" alt="image" src="https://github.com/user-attachments/assets/fe2401fc-1c77-4193-9da4-85d89ec1aca8" />
+
 
 ---
 
 ### 14.2 Real-Time Incident Response Triage (Card Grid & Table Views)
 *TomTom live traffic disruptions across 16 Indian cities with severity classifications (`Critical`, `High`, `Medium`), delay counters, affected vehicle counts, and one-click emergency unit dispatch.*
 
-![Incident Response Triage](docs/assets/02_incident_triage.png)
+<img width="1850" height="912" alt="image" src="https://github.com/user-attachments/assets/1940f309-79e6-4df7-8144-9795313b2fc0" />
+
 
 ---
 
 ### 14.3 Connected Fleet Telemetry & Vehicle Diagnostic Inspection
 *Real-time OBD-II diagnostics, vehicle battery/fuel levels, live engine temperatures, GPS coordinate tracking, and deep vehicle inspection modal.*
 
-![Fleet Telemetry and Vehicles](docs/assets/03_fleet_vehicles.png)
+<img width="1850" height="917" alt="image" src="https://github.com/user-attachments/assets/15c8c4c7-547c-42b2-bf4a-8695d608d666" />
 
 ---
 
 ### 14.4 Full-Spectrum Geospatial Road Intelligence & Live Stress Heatmap
 *Interactive MapLibre GIS map with 4 basemap styles (Light Streets, Minimal, Satellite, Dark), real-time road stress heatmaps, and city-level corridor bottleneck monitoring.*
 
-![Geospatial Road Intelligence](docs/assets/04_road_intelligence_map.png)
+<img width="1847" height="917" alt="image" src="https://github.com/user-attachments/assets/3c76c8c7-d93a-46aa-9f6f-5b8dd656f692" />
+
 
 ---
 
 ### 14.5 Multi-Model Agentic AI Operations Controller (Grounded Assistant)
 *Floating operations assistant with real-time telemetry grounding, multi-turn context retention, quick-action chips, and autonomous dispatch capabilities.*
 
-![Agentic AI Operations Assistant](docs/assets/05_ai_assistant.png)
+<img width="1040" height="813" alt="image" src="https://github.com/user-attachments/assets/67784a07-9967-42cd-a8c8-ef9b1e48852b" />
+
 
 ---
 
 ### 14.6 Operator Profile, Role Switcher & Live Notification Center
 *Interactive top bar notification bell with audio-visual dispatch alert badges, persistent operator profile customization modal, and audit logs.*
 
-![Operator Profile and Notifications](docs/assets/06_operator_notifications.png)
+<img width="643" height="558" alt="image" src="https://github.com/user-attachments/assets/0d00851e-daf2-463d-b110-392bdf823e0c" />
+
 
 ---
 
 ### 14.7 Secure Enterprise Authentication & Inactivity Session Protection
 *Corporate credentials, Google OAuth, GitHub OAuth, role-based access control (RBAC), and 24-hour inactivity session persistence.*
 
-![Login and Authentication](docs/assets/07_login_auth.png)
+<img width="957" height="892" alt="image" src="https://github.com/user-attachments/assets/5b4d7741-5dfe-48e6-9d9b-4fea6682fd3b" />
 
 ---
 
 ## 👨‍💻 Author & Acknowledgements
 - **Lead Engineer & Architect:** Hardik Agrawal
 - **Platform:** RoadSense AI — Enterprise Connected Vehicle & Road Intelligence
-- **Hackathon Domain:** Connected Vehicle Intelligence & IoT Telematics
 
