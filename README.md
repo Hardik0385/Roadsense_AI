@@ -14,7 +14,24 @@
     <a href="https://redis.io/"><img src="https://img.shields.io/badge/Redis-7.2-DC382D.svg?logo=redis&logoColor=white" alt="Redis" /></a>
     <a href="https://tailwindcss.com/"><img src="https://img.shields.io/badge/TailwindCSS-v4-38BDF8.svg?logo=tailwindcss&logoColor=white" alt="Tailwind" /></a>
   </p>
+
+  <p>
+    <a href="https://roadsense-ai-one.vercel.app/" target="_blank">
+      <img src="https://img.shields.io/badge/🚀_Live_Production_Web_App-roadsense--ai--one.vercel.app-10b981?style=for-the-badge&logo=vercel&logoColor=white" alt="Live Web App" />
+    </a>
+    &nbsp;
+    <a href="https://drive.google.com/drive/folders/1hpGdhKFeRpDB669GK6oAV-vlWOfUuy9Z" target="_blank">
+      <img src="https://img.shields.io/badge/📁_Google_Drive_Submission-Folder-4285F4?style=for-the-badge&logo=googledrive&logoColor=white" alt="Google Drive Folder" />
+    </a>
+  </p>
 </div>
+
+---
+
+> **🌐 Live Production Application:** [https://roadsense-ai-one.vercel.app/](https://roadsense-ai-one.vercel.app/)  
+> **📁 Official Hackathon Google Drive Submission:** [https://drive.google.com/drive/folders/1hpGdhKFeRpDB669GK6oAV-vlWOfUuy9Z](https://drive.google.com/drive/folders/1hpGdhKFeRpDB669GK6oAV-vlWOfUuy9Z)  
+> **🐙 GitHub Monorepo:** [https://github.com/Hardik0385/Roadsense_AI](https://github.com/Hardik0385/Roadsense_AI)  
+> **👤 Author / Presenter:** Hardik Agrawal (Register No: `RA2311003010340`, CTECH, SRM IST)
 
 ---
 
